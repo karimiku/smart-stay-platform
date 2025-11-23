@@ -1,0 +1,73 @@
+version: "3.8"
+
+services:
+  # ============================================================================
+  # Auth Service
+  # ============================================================================
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    container_name: auth-service
+    environment:
+      PORT: 50051
+    ports:
+      - "50051:50051"
+    networks:
+      - smart-stay-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # Reservation Service
+  # ============================================================================
+  reservation-service:
+    build:
+      context: .
+      dockerfile: services/reservation/Dockerfile
+    container_name: reservation-service
+    environment:
+      PORT: 50052
+    ports:
+      - "50052:50052"
+    networks:
+      - smart-stay-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # Key Service
+  # ============================================================================
+  key-service:
+    build:
+      context: .
+      dockerfile: services/key/Dockerfile
+    container_name: key-service
+    environment:
+      PORT: 50053
+    ports:
+      - "50053:50053"
+    networks:
+      - smart-stay-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # API Gateway (BFF)
+  # ============================================================================
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    environment:
+      PORT: 8080
+      AUTH_SVC_ADDR: auth-service:50051
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+    networks:
+      - smart-stay-network
+    restart: unless-stopped
+
+networks:
+  smart-stay-network:
+    driver: bridge
