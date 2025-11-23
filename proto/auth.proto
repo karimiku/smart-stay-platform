@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package auth;
+
+
+option go_package = "github.com/karimiku/smart-stay-platform/pkg/genproto/auth";
+
+// AuthService handles authentication and authorization for the platform.
+// It acts as the central security authority, managing user identities and tokens.
+service AuthService {
+  // Registers a new user with the given credentials.
+  // Note: The password must be sent over a secure connection (TLS).
+  // The service will hash the password before storing it.
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+
+  // Authenticates a user and issues a JWT access token.
+  // This token allows access to protected resources via the API Gateway.
+  rpc Login(LoginRequest) returns (LoginResponse);
+
+  // Validates an access token and retrieves the associated user identity.
+  // This RPC is primarily used by the API Gateway (BFF) to enforce security policies
+  // before forwarding requests to other backend services.
+  rpc Validate(ValidateRequest) returns (ValidateResponse);
+}
+
+// Request message for user registration.
+message RegisterRequest {
+  string email = 1;      // Unique identifier for the user.
+  string password = 2;   // Raw password (will be hashed by the server).
+  string name = 3;       // User's display name.
+}
+
+// Response message for user registration.
+message RegisterResponse {
+  int64 user_id = 1;     // The internal ID of the created user.
+}
+
+// Request message for user login.
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+// Response message containing the authentication token.
+message LoginResponse {
+  string access_token = 1; // JWT access token.
+  int64 expires_in = 2;    // Token expiration time in seconds.
+}
+
+// Request message for token validation.
+message ValidateRequest {
+  string access_token = 1;
+}
+
+// Response message for token validation.
+message ValidateResponse {
+  int64 user_id = 1;     // The authenticated user ID.
+  bool valid = 2;        // True if the token is valid and active.
+  string role = 3;       // Authorization role (e.g., "guest", "owner").
+}

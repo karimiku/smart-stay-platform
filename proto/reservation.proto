@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package reservation;
+
+import "google/protobuf/timestamp.proto";
+
+
+option go_package = "github.com/karimiku/smart-stay-platform/pkg/genproto/reservation";
+
+// ReservationService manages the lifecycle of stay reservations.
+// It serves as the coordinator for the Saga pattern (distributed transaction),
+// orchestrating payment processing and key generation workflows.
+service ReservationService {
+  // Creates a new reservation and initiates the booking workflow.
+  // The reservation starts in a PENDING state. Upon successful creation,
+  // an event is published to trigger asynchronous downstream processes (e.g., Key Service).
+  rpc CreateReservation(CreateReservationRequest) returns (CreateReservationResponse);
+
+  // Retrieves the details and current status of a reservation.
+  // Clients poll this endpoint to check if a reservation has moved from PENDING to CONFIRMED.
+  rpc GetReservation(GetReservationRequest) returns (GetReservationResponse);
+}
+
+// ReservationStatus represents the state of a reservation in the Saga workflow.
+enum ReservationStatus {
+  // The reservation is created but waiting for external dependencies (Payment, Key).
+  PENDING = 0;
+
+  // The reservation is fully confirmed and ready for check-in.
+  CONFIRMED = 1;
+
+  // The reservation was cancelled by the user or due to a system compensation.
+  CANCELLED = 2;
+
+  // The stay has been completed.
+  COMPLETED = 3;
+}
+
+message Reservation {
+  string id = 1;           // UUID
+  int64 user_id = 2;
+  int64 room_id = 3;
+  google.protobuf.Timestamp start_date = 4;
+  google.protobuf.Timestamp end_date = 5;
+  int64 total_price = 6;
+  ReservationStatus status = 7;
+}
+
+message CreateReservationRequest {
+  int64 user_id = 1;
+  int64 room_id = 2;
+  google.protobuf.Timestamp start_date = 3;
+  google.protobuf.Timestamp end_date = 4;
+}
+
+message CreateReservationResponse {
+  string reservation_id = 1;
+  ReservationStatus status = 2; // Usually PENDING in the immediate response.
+}
+
+message GetReservationRequest {
+  string reservation_id = 1;
+}
+
+message GetReservationResponse {
+  Reservation reservation = 1;
+}
