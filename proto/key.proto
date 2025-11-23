@@ -5,7 +5,7 @@ package reservation;
 import "google/protobuf/timestamp.proto";
 
 
-option go_package = "github.com/karimiku/smart-stay-platform/pkg/genproto/reservation";
+option go_package = "github.com/karimiku/smart-stay-platform/pkg/genproto/key";
 
 // ReservationService manages the lifecycle of stay reservations.
 // It serves as the coordinator for the Saga pattern (distributed transaction),
