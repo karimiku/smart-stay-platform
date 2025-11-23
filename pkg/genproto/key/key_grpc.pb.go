@@ -4,7 +4,7 @@
 // - protoc             v6.33.1
 // source: key.proto
 
-package reservation
+package key
 
 import (
 	context "context"

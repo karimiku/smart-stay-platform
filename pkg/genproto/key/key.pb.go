@@ -4,7 +4,7 @@
 // 	protoc        v6.33.1
 // source: key.proto
 
-package reservation
+package key
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -414,7 +414,7 @@ const file_key_proto_rawDesc = "" +
 	"\tCOMPLETED\x10\x032\xd3\x01\n" +
 	"\x12ReservationService\x12b\n" +
 	"\x11CreateReservation\x12%.reservation.CreateReservationRequest\x1a&.reservation.CreateReservationResponse\x12Y\n" +
-	"\x0eGetReservation\x12\".reservation.GetReservationRequest\x1a#.reservation.GetReservationResponseBBZ@github.com/karimiku/smart-stay-platform/pkg/genproto/reservationb\x06proto3"
+	"\x0eGetReservation\x12\".reservation.GetReservationRequest\x1a#.reservation.GetReservationResponseB:Z8github.com/karimiku/smart-stay-platform/pkg/genproto/keyb\x06proto3"
 
 var (
 	file_key_proto_rawDescOnce sync.Once
