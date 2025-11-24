@@ -11,8 +11,10 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
-	pb "github.com/karimiku/smart-stay-platform/pkg/genproto/auth"
+	pbAuth "github.com/karimiku/smart-stay-platform/pkg/genproto/auth"
+	pbKey "github.com/karimiku/smart-stay-platform/pkg/genproto/key"
 )
 
 func main() {
@@ -25,19 +27,30 @@ func main() {
 		authAddr = "localhost:50051"
 	}
 
+	keyAddr := os.Getenv("KEY_SVC_ADDR")
+	if keyAddr == "" {
+		keyAddr = "localhost:50053"
+	}
+
 	// 2. Connect to Auth Service (gRPC)
 	log.Printf("🔌 Connecting to Auth Service at %s...", authAddr)
-	// Use insecure credentials for internal container communication
-	conn, err := grpc.NewClient(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	authConn, err := grpc.NewClient(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to Auth Service: %v", err)
 	}
-	defer conn.Close()
+	defer authConn.Close()
+	authClient := pbAuth.NewAuthServiceClient(authConn)
 
-	// Create the gRPC client 
-	authClient := pb.NewAuthServiceClient(conn)
+	// 3. Connect to Key Service (gRPC)
+	log.Printf("🔌 Connecting to Key Service at %s...", keyAddr)
+	keyConn, err := grpc.NewClient(keyAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to Key Service: %v", err)
+	}
+	defer keyConn.Close()
+	keyClient := pbKey.NewKeyServiceClient(keyConn)
 
-	// 3. Setup HTTP Router
+	// 4. Setup HTTP Router
 	mux := http.NewServeMux()
 
 	// POST /login Endpoint
@@ -65,8 +78,8 @@ func main() {
 
 		log.Printf("[BFF] Calling Login for: %s", reqBody.Email)
 		
-		//  The actual gRPC call
-		grpcRes, err := authClient.Login(ctx, &pb.LoginRequest{
+		// The actual gRPC call
+		grpcRes, err := authClient.Login(ctx, &pbAuth.LoginRequest{
 			Email:    reqBody.Email,
 			Password: reqBody.Password,
 		})
@@ -85,7 +98,96 @@ func main() {
 		})
 	})
 
-	// 4. Start HTTP Server
+	// POST /keys/generate Endpoint
+	mux.HandleFunc("/keys/generate", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var reqBody struct {
+			ReservationID string `json:"reservation_id"`
+			ValidFrom     string `json:"valid_from"`     // ISO 8601 format
+			ValidUntil    string `json:"valid_until"`   // ISO 8601 format
+		}
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		// Parse timestamps
+		validFrom, err := time.Parse(time.RFC3339, reqBody.ValidFrom)
+		if err != nil {
+			http.Error(w, "Invalid valid_from format (use RFC3339)", http.StatusBadRequest)
+			return
+		}
+		validUntil, err := time.Parse(time.RFC3339, reqBody.ValidUntil)
+		if err != nil {
+			http.Error(w, "Invalid valid_until format (use RFC3339)", http.StatusBadRequest)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		log.Printf("[BFF] Generating key for reservation: %s", reqBody.ReservationID)
+
+		grpcRes, err := keyClient.GenerateKey(ctx, &pbKey.GenerateKeyRequest{
+			ReservationId: reqBody.ReservationID,
+			ValidFrom:     timestamppb.New(validFrom),
+			ValidUntil:    timestamppb.New(validUntil),
+		})
+
+		if err != nil {
+			log.Printf("❌ GenerateKey failed: %v", err)
+			http.Error(w, fmt.Sprintf("GenerateKey failed: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"key_code":  grpcRes.KeyCode,
+			"device_id": grpcRes.DeviceId,
+		})
+	})
+
+	// POST /keys/revoke Endpoint
+	mux.HandleFunc("/keys/revoke", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var reqBody struct {
+			ReservationID string `json:"reservation_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		log.Printf("[BFF] Revoking key for reservation: %s", reqBody.ReservationID)
+
+		grpcRes, err := keyClient.RevokeKey(ctx, &pbKey.RevokeKeyRequest{
+			ReservationId: reqBody.ReservationID,
+		})
+
+		if err != nil {
+			log.Printf("❌ RevokeKey failed: %v", err)
+			http.Error(w, fmt.Sprintf("RevokeKey failed: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": grpcRes.Success,
+		})
+	})
+
+	// 5. Start HTTP Server
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
