@@ -1,67 +1,43 @@
 syntax = "proto3";
 
-package reservation;
+package key;
 
 import "google/protobuf/timestamp.proto";
 
 
 option go_package = "github.com/karimiku/smart-stay-platform/pkg/genproto/key";
 
-// ReservationService manages the lifecycle of stay reservations.
-// It serves as the coordinator for the Saga pattern (distributed transaction),
-// orchestrating payment processing and key generation workflows.
-service ReservationService {
-  // Creates a new reservation and initiates the booking workflow.
-  // The reservation starts in a PENDING state. Upon successful creation,
-  // an event is published to trigger asynchronous downstream processes (e.g., Key Service).
-  rpc CreateReservation(CreateReservationRequest) returns (CreateReservationResponse);
+// KeyService manages the issuance and revocation of digital keys.
+// It abstracts the underlying IoT device APIs, providing a unified interface for key management.
+service KeyService {
+  // Generates a digital key code for a specific reservation.
+  // The key will be valid only during the specified time window.
+  rpc GenerateKey(GenerateKeyRequest) returns (GenerateKeyResponse);
 
-  // Retrieves the details and current status of a reservation.
-  // Clients poll this endpoint to check if a reservation has moved from PENDING to CONFIRMED.
-  rpc GetReservation(GetReservationRequest) returns (GetReservationResponse);
+  // Immediately revokes a digital key.
+  // This is a synchronous operation used for security-critical actions like check-out.
+  rpc RevokeKey(RevokeKeyRequest) returns (RevokeKeyResponse);
 }
 
-// ReservationStatus represents the state of a reservation in the Saga workflow.
-enum ReservationStatus {
-  // The reservation is created but waiting for external dependencies (Payment, Key).
-  PENDING = 0;
-
-  // The reservation is fully confirmed and ready for check-in.
-  CONFIRMED = 1;
-
-  // The reservation was cancelled by the user or due to a system compensation.
-  CANCELLED = 2;
-
-  // The stay has been completed.
-  COMPLETED = 3;
-}
-
-message Reservation {
-  string id = 1;           // UUID
-  int64 user_id = 2;
-  int64 room_id = 3;
-  google.protobuf.Timestamp start_date = 4;
-  google.protobuf.Timestamp end_date = 5;
-  int64 total_price = 6;
-  ReservationStatus status = 7;
-}
-
-message CreateReservationRequest {
-  int64 user_id = 1;
-  int64 room_id = 2;
-  google.protobuf.Timestamp start_date = 3;
-  google.protobuf.Timestamp end_date = 4;
-}
-
-message CreateReservationResponse {
+// The request message for key generation.
+message GenerateKeyRequest {
   string reservation_id = 1;
-  ReservationStatus status = 2; // Usually PENDING in the immediate response.
+  google.protobuf.Timestamp valid_from = 2;
+  google.protobuf.Timestamp valid_until = 3;
 }
 
-message GetReservationRequest {
+// The response message containing the generated key details.
+message GenerateKeyResponse {
+  string key_code = 1;
+  string device_id = 2;
+}
+
+// The request message for key revocation.
+message RevokeKeyRequest {
   string reservation_id = 1;
 }
 
-message GetReservationResponse {
-  Reservation reservation = 1;
+// The response message for key revocation.
+message RevokeKeyResponse {
+  bool success = 1;
 }
