@@ -414,7 +414,7 @@ const file_reservation_proto_rawDesc = "" +
 	"\tCOMPLETED\x10\x032\xd3\x01\n" +
 	"\x12ReservationService\x12b\n" +
 	"\x11CreateReservation\x12%.reservation.CreateReservationRequest\x1a&.reservation.CreateReservationResponse\x12Y\n" +
-	"\x0eGetReservation\x12\".reservation.GetReservationRequest\x1a#.reservation.GetReservationResponseB.Z,smart-stay-platform/pkg/genproto/reservationb\x06proto3"
+	"\x0eGetReservation\x12\".reservation.GetReservationRequest\x1a#.reservation.GetReservationResponseBBZ@github.com/karimiku/smart-stay-platform/pkg/genproto/reservationb\x06proto3"
 
 var (
 	file_reservation_proto_rawDescOnce sync.Once

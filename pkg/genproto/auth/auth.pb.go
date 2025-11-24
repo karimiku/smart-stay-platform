@@ -367,7 +367,7 @@ const file_auth_proto_rawDesc = "" +
 	"\vAuthService\x129\n" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.auth.RegisterResponse\x120\n" +
 	"\x05Login\x12\x12.auth.LoginRequest\x1a\x13.auth.LoginResponse\x129\n" +
-	"\bValidate\x12\x15.auth.ValidateRequest\x1a\x16.auth.ValidateResponseB'Z%smart-stay-platform/pkg/genproto/authb\x06proto3"
+	"\bValidate\x12\x15.auth.ValidateRequest\x1a\x16.auth.ValidateResponseB;Z9github.com/karimiku/smart-stay-platform/pkg/genproto/authb\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once
