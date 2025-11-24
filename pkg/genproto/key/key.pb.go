@@ -22,90 +22,30 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ReservationStatus represents the state of a reservation in the Saga workflow.
-type ReservationStatus int32
-
-const (
-	// The reservation is created but waiting for external dependencies (Payment, Key).
-	ReservationStatus_PENDING ReservationStatus = 0
-	// The reservation is fully confirmed and ready for check-in.
-	ReservationStatus_CONFIRMED ReservationStatus = 1
-	// The reservation was cancelled by the user or due to a system compensation.
-	ReservationStatus_CANCELLED ReservationStatus = 2
-	// The stay has been completed.
-	ReservationStatus_COMPLETED ReservationStatus = 3
-)
-
-// Enum value maps for ReservationStatus.
-var (
-	ReservationStatus_name = map[int32]string{
-		0: "PENDING",
-		1: "CONFIRMED",
-		2: "CANCELLED",
-		3: "COMPLETED",
-	}
-	ReservationStatus_value = map[string]int32{
-		"PENDING":   0,
-		"CONFIRMED": 1,
-		"CANCELLED": 2,
-		"COMPLETED": 3,
-	}
-)
-
-func (x ReservationStatus) Enum() *ReservationStatus {
-	p := new(ReservationStatus)
-	*p = x
-	return p
-}
-
-func (x ReservationStatus) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ReservationStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_key_proto_enumTypes[0].Descriptor()
-}
-
-func (ReservationStatus) Type() protoreflect.EnumType {
-	return &file_key_proto_enumTypes[0]
-}
-
-func (x ReservationStatus) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ReservationStatus.Descriptor instead.
-func (ReservationStatus) EnumDescriptor() ([]byte, []int) {
-	return file_key_proto_rawDescGZIP(), []int{0}
-}
-
-type Reservation struct {
+// The request message for key generation.
+type GenerateKeyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // UUID
-	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	RoomId        int64                  `protobuf:"varint,3,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
-	StartDate     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
-	EndDate       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty"`
-	TotalPrice    int64                  `protobuf:"varint,6,opt,name=total_price,json=totalPrice,proto3" json:"total_price,omitempty"`
-	Status        ReservationStatus      `protobuf:"varint,7,opt,name=status,proto3,enum=reservation.ReservationStatus" json:"status,omitempty"`
+	ReservationId string                 `protobuf:"bytes,1,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
+	ValidFrom     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=valid_from,json=validFrom,proto3" json:"valid_from,omitempty"`
+	ValidUntil    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Reservation) Reset() {
-	*x = Reservation{}
+func (x *GenerateKeyRequest) Reset() {
+	*x = GenerateKeyRequest{}
 	mi := &file_key_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Reservation) String() string {
+func (x *GenerateKeyRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Reservation) ProtoMessage() {}
+func (*GenerateKeyRequest) ProtoMessage() {}
 
-func (x *Reservation) ProtoReflect() protoreflect.Message {
+func (x *GenerateKeyRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_key_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -117,84 +57,55 @@ func (x *Reservation) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Reservation.ProtoReflect.Descriptor instead.
-func (*Reservation) Descriptor() ([]byte, []int) {
+// Deprecated: Use GenerateKeyRequest.ProtoReflect.Descriptor instead.
+func (*GenerateKeyRequest) Descriptor() ([]byte, []int) {
 	return file_key_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Reservation) GetId() string {
+func (x *GenerateKeyRequest) GetReservationId() string {
 	if x != nil {
-		return x.Id
+		return x.ReservationId
 	}
 	return ""
 }
 
-func (x *Reservation) GetUserId() int64 {
+func (x *GenerateKeyRequest) GetValidFrom() *timestamppb.Timestamp {
 	if x != nil {
-		return x.UserId
-	}
-	return 0
-}
-
-func (x *Reservation) GetRoomId() int64 {
-	if x != nil {
-		return x.RoomId
-	}
-	return 0
-}
-
-func (x *Reservation) GetStartDate() *timestamppb.Timestamp {
-	if x != nil {
-		return x.StartDate
+		return x.ValidFrom
 	}
 	return nil
 }
 
-func (x *Reservation) GetEndDate() *timestamppb.Timestamp {
+func (x *GenerateKeyRequest) GetValidUntil() *timestamppb.Timestamp {
 	if x != nil {
-		return x.EndDate
+		return x.ValidUntil
 	}
 	return nil
 }
 
-func (x *Reservation) GetTotalPrice() int64 {
-	if x != nil {
-		return x.TotalPrice
-	}
-	return 0
-}
-
-func (x *Reservation) GetStatus() ReservationStatus {
-	if x != nil {
-		return x.Status
-	}
-	return ReservationStatus_PENDING
-}
-
-type CreateReservationRequest struct {
+// The response message containing the generated key details.
+type GenerateKeyResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	RoomId        int64                  `protobuf:"varint,2,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
-	StartDate     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
-	EndDate       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty"`
+	KeyCode       string                 `protobuf:"bytes,1,opt,name=key_code,json=keyCode,proto3" json:"key_code,omitempty"`
+	DeviceId      string                 `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateReservationRequest) Reset() {
-	*x = CreateReservationRequest{}
+func (x *GenerateKeyResponse) Reset() {
+	*x = GenerateKeyResponse{}
 	mi := &file_key_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateReservationRequest) String() string {
+func (x *GenerateKeyResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateReservationRequest) ProtoMessage() {}
+func (*GenerateKeyResponse) ProtoMessage() {}
 
-func (x *CreateReservationRequest) ProtoReflect() protoreflect.Message {
+func (x *GenerateKeyResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_key_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -206,61 +117,47 @@ func (x *CreateReservationRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateReservationRequest.ProtoReflect.Descriptor instead.
-func (*CreateReservationRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GenerateKeyResponse.ProtoReflect.Descriptor instead.
+func (*GenerateKeyResponse) Descriptor() ([]byte, []int) {
 	return file_key_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CreateReservationRequest) GetUserId() int64 {
+func (x *GenerateKeyResponse) GetKeyCode() string {
 	if x != nil {
-		return x.UserId
+		return x.KeyCode
 	}
-	return 0
+	return ""
 }
 
-func (x *CreateReservationRequest) GetRoomId() int64 {
+func (x *GenerateKeyResponse) GetDeviceId() string {
 	if x != nil {
-		return x.RoomId
+		return x.DeviceId
 	}
-	return 0
+	return ""
 }
 
-func (x *CreateReservationRequest) GetStartDate() *timestamppb.Timestamp {
-	if x != nil {
-		return x.StartDate
-	}
-	return nil
-}
-
-func (x *CreateReservationRequest) GetEndDate() *timestamppb.Timestamp {
-	if x != nil {
-		return x.EndDate
-	}
-	return nil
-}
-
-type CreateReservationResponse struct {
+// The request message for key revocation.
+type RevokeKeyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ReservationId string                 `protobuf:"bytes,1,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
-	Status        ReservationStatus      `protobuf:"varint,2,opt,name=status,proto3,enum=reservation.ReservationStatus" json:"status,omitempty"` // Usually PENDING in the immediate response.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateReservationResponse) Reset() {
-	*x = CreateReservationResponse{}
+func (x *RevokeKeyRequest) Reset() {
+	*x = RevokeKeyRequest{}
 	mi := &file_key_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateReservationResponse) String() string {
+func (x *RevokeKeyRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateReservationResponse) ProtoMessage() {}
+func (*RevokeKeyRequest) ProtoMessage() {}
 
-func (x *CreateReservationResponse) ProtoReflect() protoreflect.Message {
+func (x *RevokeKeyRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_key_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -272,46 +169,40 @@ func (x *CreateReservationResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateReservationResponse.ProtoReflect.Descriptor instead.
-func (*CreateReservationResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RevokeKeyRequest.ProtoReflect.Descriptor instead.
+func (*RevokeKeyRequest) Descriptor() ([]byte, []int) {
 	return file_key_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *CreateReservationResponse) GetReservationId() string {
+func (x *RevokeKeyRequest) GetReservationId() string {
 	if x != nil {
 		return x.ReservationId
 	}
 	return ""
 }
 
-func (x *CreateReservationResponse) GetStatus() ReservationStatus {
-	if x != nil {
-		return x.Status
-	}
-	return ReservationStatus_PENDING
-}
-
-type GetReservationRequest struct {
+// The response message for key revocation.
+type RevokeKeyResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReservationId string                 `protobuf:"bytes,1,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetReservationRequest) Reset() {
-	*x = GetReservationRequest{}
+func (x *RevokeKeyResponse) Reset() {
+	*x = RevokeKeyResponse{}
 	mi := &file_key_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetReservationRequest) String() string {
+func (x *RevokeKeyResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetReservationRequest) ProtoMessage() {}
+func (*RevokeKeyResponse) ProtoMessage() {}
 
-func (x *GetReservationRequest) ProtoReflect() protoreflect.Message {
+func (x *RevokeKeyResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_key_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -323,98 +214,40 @@ func (x *GetReservationRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetReservationRequest.ProtoReflect.Descriptor instead.
-func (*GetReservationRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RevokeKeyResponse.ProtoReflect.Descriptor instead.
+func (*RevokeKeyResponse) Descriptor() ([]byte, []int) {
 	return file_key_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetReservationRequest) GetReservationId() string {
+func (x *RevokeKeyResponse) GetSuccess() bool {
 	if x != nil {
-		return x.ReservationId
+		return x.Success
 	}
-	return ""
-}
-
-type GetReservationResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Reservation   *Reservation           `protobuf:"bytes,1,opt,name=reservation,proto3" json:"reservation,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetReservationResponse) Reset() {
-	*x = GetReservationResponse{}
-	mi := &file_key_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetReservationResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetReservationResponse) ProtoMessage() {}
-
-func (x *GetReservationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_key_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetReservationResponse.ProtoReflect.Descriptor instead.
-func (*GetReservationResponse) Descriptor() ([]byte, []int) {
-	return file_key_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *GetReservationResponse) GetReservation() *Reservation {
-	if x != nil {
-		return x.Reservation
-	}
-	return nil
+	return false
 }
 
 var File_key_proto protoreflect.FileDescriptor
 
 const file_key_proto_rawDesc = "" +
 	"\n" +
-	"\tkey.proto\x12\vreservation\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9a\x02\n" +
-	"\vReservation\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x17\n" +
-	"\aroom_id\x18\x03 \x01(\x03R\x06roomId\x129\n" +
+	"\tkey.proto\x12\x03key\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb3\x01\n" +
+	"\x12GenerateKeyRequest\x12%\n" +
+	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\x129\n" +
 	"\n" +
-	"start_date\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tstartDate\x125\n" +
-	"\bend_date\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\aendDate\x12\x1f\n" +
-	"\vtotal_price\x18\x06 \x01(\x03R\n" +
-	"totalPrice\x126\n" +
-	"\x06status\x18\a \x01(\x0e2\x1e.reservation.ReservationStatusR\x06status\"\xbe\x01\n" +
-	"\x18CreateReservationRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x17\n" +
-	"\aroom_id\x18\x02 \x01(\x03R\x06roomId\x129\n" +
+	"valid_from\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tvalidFrom\x12;\n" +
+	"\vvalid_until\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"validUntil\"M\n" +
+	"\x13GenerateKeyResponse\x12\x19\n" +
+	"\bkey_code\x18\x01 \x01(\tR\akeyCode\x12\x1b\n" +
+	"\tdevice_id\x18\x02 \x01(\tR\bdeviceId\"9\n" +
+	"\x10RevokeKeyRequest\x12%\n" +
+	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\"-\n" +
+	"\x11RevokeKeyResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\x8a\x01\n" +
 	"\n" +
-	"start_date\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tstartDate\x125\n" +
-	"\bend_date\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\aendDate\"z\n" +
-	"\x19CreateReservationResponse\x12%\n" +
-	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\x126\n" +
-	"\x06status\x18\x02 \x01(\x0e2\x1e.reservation.ReservationStatusR\x06status\">\n" +
-	"\x15GetReservationRequest\x12%\n" +
-	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\"T\n" +
-	"\x16GetReservationResponse\x12:\n" +
-	"\vreservation\x18\x01 \x01(\v2\x18.reservation.ReservationR\vreservation*M\n" +
-	"\x11ReservationStatus\x12\v\n" +
-	"\aPENDING\x10\x00\x12\r\n" +
-	"\tCONFIRMED\x10\x01\x12\r\n" +
-	"\tCANCELLED\x10\x02\x12\r\n" +
-	"\tCOMPLETED\x10\x032\xd3\x01\n" +
-	"\x12ReservationService\x12b\n" +
-	"\x11CreateReservation\x12%.reservation.CreateReservationRequest\x1a&.reservation.CreateReservationResponse\x12Y\n" +
-	"\x0eGetReservation\x12\".reservation.GetReservationRequest\x1a#.reservation.GetReservationResponseB:Z8github.com/karimiku/smart-stay-platform/pkg/genproto/keyb\x06proto3"
+	"KeyService\x12@\n" +
+	"\vGenerateKey\x12\x17.key.GenerateKeyRequest\x1a\x18.key.GenerateKeyResponse\x12:\n" +
+	"\tRevokeKey\x12\x15.key.RevokeKeyRequest\x1a\x16.key.RevokeKeyResponseB:Z8github.com/karimiku/smart-stay-platform/pkg/genproto/keyb\x06proto3"
 
 var (
 	file_key_proto_rawDescOnce sync.Once
@@ -428,34 +261,26 @@ func file_key_proto_rawDescGZIP() []byte {
 	return file_key_proto_rawDescData
 }
 
-var file_key_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_key_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_key_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_key_proto_goTypes = []any{
-	(ReservationStatus)(0),            // 0: reservation.ReservationStatus
-	(*Reservation)(nil),               // 1: reservation.Reservation
-	(*CreateReservationRequest)(nil),  // 2: reservation.CreateReservationRequest
-	(*CreateReservationResponse)(nil), // 3: reservation.CreateReservationResponse
-	(*GetReservationRequest)(nil),     // 4: reservation.GetReservationRequest
-	(*GetReservationResponse)(nil),    // 5: reservation.GetReservationResponse
-	(*timestamppb.Timestamp)(nil),     // 6: google.protobuf.Timestamp
+	(*GenerateKeyRequest)(nil),    // 0: key.GenerateKeyRequest
+	(*GenerateKeyResponse)(nil),   // 1: key.GenerateKeyResponse
+	(*RevokeKeyRequest)(nil),      // 2: key.RevokeKeyRequest
+	(*RevokeKeyResponse)(nil),     // 3: key.RevokeKeyResponse
+	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
 }
 var file_key_proto_depIdxs = []int32{
-	6, // 0: reservation.Reservation.start_date:type_name -> google.protobuf.Timestamp
-	6, // 1: reservation.Reservation.end_date:type_name -> google.protobuf.Timestamp
-	0, // 2: reservation.Reservation.status:type_name -> reservation.ReservationStatus
-	6, // 3: reservation.CreateReservationRequest.start_date:type_name -> google.protobuf.Timestamp
-	6, // 4: reservation.CreateReservationRequest.end_date:type_name -> google.protobuf.Timestamp
-	0, // 5: reservation.CreateReservationResponse.status:type_name -> reservation.ReservationStatus
-	1, // 6: reservation.GetReservationResponse.reservation:type_name -> reservation.Reservation
-	2, // 7: reservation.ReservationService.CreateReservation:input_type -> reservation.CreateReservationRequest
-	4, // 8: reservation.ReservationService.GetReservation:input_type -> reservation.GetReservationRequest
-	3, // 9: reservation.ReservationService.CreateReservation:output_type -> reservation.CreateReservationResponse
-	5, // 10: reservation.ReservationService.GetReservation:output_type -> reservation.GetReservationResponse
-	9, // [9:11] is the sub-list for method output_type
-	7, // [7:9] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	4, // 0: key.GenerateKeyRequest.valid_from:type_name -> google.protobuf.Timestamp
+	4, // 1: key.GenerateKeyRequest.valid_until:type_name -> google.protobuf.Timestamp
+	0, // 2: key.KeyService.GenerateKey:input_type -> key.GenerateKeyRequest
+	2, // 3: key.KeyService.RevokeKey:input_type -> key.RevokeKeyRequest
+	1, // 4: key.KeyService.GenerateKey:output_type -> key.GenerateKeyResponse
+	3, // 5: key.KeyService.RevokeKey:output_type -> key.RevokeKeyResponse
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_key_proto_init() }
@@ -468,14 +293,13 @@ func file_key_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_key_proto_rawDesc), len(file_key_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   5,
+			NumEnums:      0,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_key_proto_goTypes,
 		DependencyIndexes: file_key_proto_depIdxs,
-		EnumInfos:         file_key_proto_enumTypes,
 		MessageInfos:      file_key_proto_msgTypes,
 	}.Build()
 	File_key_proto = out.File

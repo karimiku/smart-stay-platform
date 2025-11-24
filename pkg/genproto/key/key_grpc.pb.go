@@ -19,157 +19,153 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ReservationService_CreateReservation_FullMethodName = "/reservation.ReservationService/CreateReservation"
-	ReservationService_GetReservation_FullMethodName    = "/reservation.ReservationService/GetReservation"
+	KeyService_GenerateKey_FullMethodName = "/key.KeyService/GenerateKey"
+	KeyService_RevokeKey_FullMethodName   = "/key.KeyService/RevokeKey"
 )
 
-// ReservationServiceClient is the client API for ReservationService service.
+// KeyServiceClient is the client API for KeyService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ReservationService manages the lifecycle of stay reservations.
-// It serves as the coordinator for the Saga pattern (distributed transaction),
-// orchestrating payment processing and key generation workflows.
-type ReservationServiceClient interface {
-	// Creates a new reservation and initiates the booking workflow.
-	// The reservation starts in a PENDING state. Upon successful creation,
-	// an event is published to trigger asynchronous downstream processes (e.g., Key Service).
-	CreateReservation(ctx context.Context, in *CreateReservationRequest, opts ...grpc.CallOption) (*CreateReservationResponse, error)
-	// Retrieves the details and current status of a reservation.
-	// Clients poll this endpoint to check if a reservation has moved from PENDING to CONFIRMED.
-	GetReservation(ctx context.Context, in *GetReservationRequest, opts ...grpc.CallOption) (*GetReservationResponse, error)
+// KeyService manages the issuance and revocation of digital keys.
+// It abstracts the underlying IoT device APIs, providing a unified interface for key management.
+type KeyServiceClient interface {
+	// Generates a digital key code for a specific reservation.
+	// The key will be valid only during the specified time window.
+	GenerateKey(ctx context.Context, in *GenerateKeyRequest, opts ...grpc.CallOption) (*GenerateKeyResponse, error)
+	// Immediately revokes a digital key.
+	// This is a synchronous operation used for security-critical actions like check-out.
+	RevokeKey(ctx context.Context, in *RevokeKeyRequest, opts ...grpc.CallOption) (*RevokeKeyResponse, error)
 }
 
-type reservationServiceClient struct {
+type keyServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewReservationServiceClient(cc grpc.ClientConnInterface) ReservationServiceClient {
-	return &reservationServiceClient{cc}
+func NewKeyServiceClient(cc grpc.ClientConnInterface) KeyServiceClient {
+	return &keyServiceClient{cc}
 }
 
-func (c *reservationServiceClient) CreateReservation(ctx context.Context, in *CreateReservationRequest, opts ...grpc.CallOption) (*CreateReservationResponse, error) {
+func (c *keyServiceClient) GenerateKey(ctx context.Context, in *GenerateKeyRequest, opts ...grpc.CallOption) (*GenerateKeyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateReservationResponse)
-	err := c.cc.Invoke(ctx, ReservationService_CreateReservation_FullMethodName, in, out, cOpts...)
+	out := new(GenerateKeyResponse)
+	err := c.cc.Invoke(ctx, KeyService_GenerateKey_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *reservationServiceClient) GetReservation(ctx context.Context, in *GetReservationRequest, opts ...grpc.CallOption) (*GetReservationResponse, error) {
+func (c *keyServiceClient) RevokeKey(ctx context.Context, in *RevokeKeyRequest, opts ...grpc.CallOption) (*RevokeKeyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetReservationResponse)
-	err := c.cc.Invoke(ctx, ReservationService_GetReservation_FullMethodName, in, out, cOpts...)
+	out := new(RevokeKeyResponse)
+	err := c.cc.Invoke(ctx, KeyService_RevokeKey_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ReservationServiceServer is the server API for ReservationService service.
-// All implementations must embed UnimplementedReservationServiceServer
+// KeyServiceServer is the server API for KeyService service.
+// All implementations must embed UnimplementedKeyServiceServer
 // for forward compatibility.
 //
-// ReservationService manages the lifecycle of stay reservations.
-// It serves as the coordinator for the Saga pattern (distributed transaction),
-// orchestrating payment processing and key generation workflows.
-type ReservationServiceServer interface {
-	// Creates a new reservation and initiates the booking workflow.
-	// The reservation starts in a PENDING state. Upon successful creation,
-	// an event is published to trigger asynchronous downstream processes (e.g., Key Service).
-	CreateReservation(context.Context, *CreateReservationRequest) (*CreateReservationResponse, error)
-	// Retrieves the details and current status of a reservation.
-	// Clients poll this endpoint to check if a reservation has moved from PENDING to CONFIRMED.
-	GetReservation(context.Context, *GetReservationRequest) (*GetReservationResponse, error)
-	mustEmbedUnimplementedReservationServiceServer()
+// KeyService manages the issuance and revocation of digital keys.
+// It abstracts the underlying IoT device APIs, providing a unified interface for key management.
+type KeyServiceServer interface {
+	// Generates a digital key code for a specific reservation.
+	// The key will be valid only during the specified time window.
+	GenerateKey(context.Context, *GenerateKeyRequest) (*GenerateKeyResponse, error)
+	// Immediately revokes a digital key.
+	// This is a synchronous operation used for security-critical actions like check-out.
+	RevokeKey(context.Context, *RevokeKeyRequest) (*RevokeKeyResponse, error)
+	mustEmbedUnimplementedKeyServiceServer()
 }
 
-// UnimplementedReservationServiceServer must be embedded to have
+// UnimplementedKeyServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedReservationServiceServer struct{}
+type UnimplementedKeyServiceServer struct{}
 
-func (UnimplementedReservationServiceServer) CreateReservation(context.Context, *CreateReservationRequest) (*CreateReservationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateReservation not implemented")
+func (UnimplementedKeyServiceServer) GenerateKey(context.Context, *GenerateKeyRequest) (*GenerateKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateKey not implemented")
 }
-func (UnimplementedReservationServiceServer) GetReservation(context.Context, *GetReservationRequest) (*GetReservationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetReservation not implemented")
+func (UnimplementedKeyServiceServer) RevokeKey(context.Context, *RevokeKeyRequest) (*RevokeKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeKey not implemented")
 }
-func (UnimplementedReservationServiceServer) mustEmbedUnimplementedReservationServiceServer() {}
-func (UnimplementedReservationServiceServer) testEmbeddedByValue()                            {}
+func (UnimplementedKeyServiceServer) mustEmbedUnimplementedKeyServiceServer() {}
+func (UnimplementedKeyServiceServer) testEmbeddedByValue()                    {}
 
-// UnsafeReservationServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ReservationServiceServer will
+// UnsafeKeyServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to KeyServiceServer will
 // result in compilation errors.
-type UnsafeReservationServiceServer interface {
-	mustEmbedUnimplementedReservationServiceServer()
+type UnsafeKeyServiceServer interface {
+	mustEmbedUnimplementedKeyServiceServer()
 }
 
-func RegisterReservationServiceServer(s grpc.ServiceRegistrar, srv ReservationServiceServer) {
-	// If the following call pancis, it indicates UnimplementedReservationServiceServer was
+func RegisterKeyServiceServer(s grpc.ServiceRegistrar, srv KeyServiceServer) {
+	// If the following call pancis, it indicates UnimplementedKeyServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&ReservationService_ServiceDesc, srv)
+	s.RegisterService(&KeyService_ServiceDesc, srv)
 }
 
-func _ReservationService_CreateReservation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateReservationRequest)
+func _KeyService_GenerateKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateKeyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ReservationServiceServer).CreateReservation(ctx, in)
+		return srv.(KeyServiceServer).GenerateKey(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ReservationService_CreateReservation_FullMethodName,
+		FullMethod: KeyService_GenerateKey_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReservationServiceServer).CreateReservation(ctx, req.(*CreateReservationRequest))
+		return srv.(KeyServiceServer).GenerateKey(ctx, req.(*GenerateKeyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReservationService_GetReservation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetReservationRequest)
+func _KeyService_RevokeKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeKeyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ReservationServiceServer).GetReservation(ctx, in)
+		return srv.(KeyServiceServer).RevokeKey(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ReservationService_GetReservation_FullMethodName,
+		FullMethod: KeyService_RevokeKey_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReservationServiceServer).GetReservation(ctx, req.(*GetReservationRequest))
+		return srv.(KeyServiceServer).RevokeKey(ctx, req.(*RevokeKeyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// ReservationService_ServiceDesc is the grpc.ServiceDesc for ReservationService service.
+// KeyService_ServiceDesc is the grpc.ServiceDesc for KeyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ReservationService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "reservation.ReservationService",
-	HandlerType: (*ReservationServiceServer)(nil),
+var KeyService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "key.KeyService",
+	HandlerType: (*KeyServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateReservation",
-			Handler:    _ReservationService_CreateReservation_Handler,
+			MethodName: "GenerateKey",
+			Handler:    _KeyService_GenerateKey_Handler,
 		},
 		{
-			MethodName: "GetReservation",
-			Handler:    _ReservationService_GetReservation_Handler,
+			MethodName: "RevokeKey",
+			Handler:    _KeyService_RevokeKey_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
