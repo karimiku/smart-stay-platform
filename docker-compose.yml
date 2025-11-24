@@ -60,10 +60,12 @@ services:
     environment:
       PORT: 8080
       AUTH_SVC_ADDR: auth-service:50051
+      KEY_SVC_ADDR: key-service:50053
     ports:
       - "8080:8080"
     depends_on:
       - auth-service
+      - key-service
     networks:
       - smart-stay-network
     restart: unless-stopped
