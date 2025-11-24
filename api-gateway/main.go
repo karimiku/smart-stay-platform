@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,187 +12,200 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	// ⚠️ Replace [yourusername] with your actual GitHub username
 	pbAuth "github.com/karimiku/smart-stay-platform/pkg/genproto/auth"
 	pbKey "github.com/karimiku/smart-stay-platform/pkg/genproto/key"
+	pbRes "github.com/karimiku/smart-stay-platform/pkg/genproto/reservation"
 )
 
 func main() {
 	log.Println("🚀 Starting API Gateway...")
 
-	// 1. Get configuration from Environment Variables
-	// In Docker Compose, this will be "auth-service:50051"
-	authAddr := os.Getenv("AUTH_SVC_ADDR")
-	if authAddr == "" {
-		authAddr = "localhost:50051"
-	}
+	// 1. Configuration (Env vars)
+	authAddr := getEnv("AUTH_SVC_ADDR", "localhost:50051")
+	resAddr := getEnv("RESERVATION_SVC_ADDR", "localhost:50052")
+	keyAddr := getEnv("KEY_SVC_ADDR", "localhost:50053")
 
-	keyAddr := os.Getenv("KEY_SVC_ADDR")
-	if keyAddr == "" {
-		keyAddr = "localhost:50053"
-	}
-
-	// 2. Connect to Auth Service (gRPC)
-	log.Printf("🔌 Connecting to Auth Service at %s...", authAddr)
-	authConn, err := grpc.NewClient(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("Failed to connect to Auth Service: %v", err)
-	}
+	// 2. Connect to Services (gRPC)
+	// Auth Service
+	authConn := mustConnectGrpc("Auth Service", authAddr)
 	defer authConn.Close()
 	authClient := pbAuth.NewAuthServiceClient(authConn)
 
-	// 3. Connect to Key Service (gRPC)
-	log.Printf("🔌 Connecting to Key Service at %s...", keyAddr)
-	keyConn, err := grpc.NewClient(keyAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("Failed to connect to Key Service: %v", err)
-	}
+	// Reservation Service
+	resConn := mustConnectGrpc("Reservation Service", resAddr)
+	defer resConn.Close()
+	resClient := pbRes.NewReservationServiceClient(resConn)
+
+	// Key Service
+	keyConn := mustConnectGrpc("Key Service", keyAddr)
 	defer keyConn.Close()
 	keyClient := pbKey.NewKeyServiceClient(keyConn)
 
-	// 4. Setup HTTP Router
+	// 3. Setup Router
 	mux := http.NewServeMux()
 
-	// POST /login Endpoint
+	// =========================================================================
+	// 🛡️ Auth Routes
+	// =========================================================================
 	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		// A. Validate Method
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-
-		// B. Parse JSON Body
 		var reqBody struct {
 			Email    string `json:"email"`
 			Password string `json:"password"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}
 
-		// C. Call gRPC Service
-		// Set a 5-second timeout for reliability
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		log.Printf("[BFF] Calling Login for: %s", reqBody.Email)
-		
-		// The actual gRPC call
-		grpcRes, err := authClient.Login(ctx, &pbAuth.LoginRequest{
+		res, err := authClient.Login(ctx, &pbAuth.LoginRequest{
 			Email:    reqBody.Email,
 			Password: reqBody.Password,
 		})
-		
 		if err != nil {
 			log.Printf("❌ Login failed: %v", err)
-			http.Error(w, fmt.Sprintf("Login failed: %v", err), http.StatusInternalServerError)
+			http.Error(w, "Login failed", http.StatusInternalServerError)
 			return
 		}
-
-		// D. Return JSON Response
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"token":      grpcRes.AccessToken,
-			"expires_in": grpcRes.ExpiresIn,
+		jsonResponse(w, map[string]interface{}{
+			"token":      res.AccessToken,
+			"expires_in": res.ExpiresIn,
 		})
 	})
 
-	// POST /keys/generate Endpoint
+	// =========================================================================
+	// 📝 Reservation Routes (Saga Start)
+	// =========================================================================
+	mux.HandleFunc("/reservations", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var reqBody struct {
+			UserID    int64  `json:"user_id"`
+			RoomID    int64  `json:"room_id"`
+			StartDate string `json:"start_date"` // Format: YYYY-MM-DD
+			EndDate   string `json:"end_date"`   // Format: YYYY-MM-DD
+		}
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+			return
+		}
+
+		// Parse Date Strings to Time
+		layout := "2006-01-02"
+		start, err := time.Parse(layout, reqBody.StartDate)
+		if err != nil {
+			http.Error(w, "Invalid start_date format (use YYYY-MM-DD)", http.StatusBadRequest)
+			return
+		}
+		end, err := time.Parse(layout, reqBody.EndDate)
+		if err != nil {
+			http.Error(w, "Invalid end_date format (use YYYY-MM-DD)", http.StatusBadRequest)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		log.Printf("[BFF] Creating Reservation for User %d", reqBody.UserID)
+		
+		// Call gRPC (Trigger Pub/Sub event inside Reservation Service)
+		res, err := resClient.CreateReservation(ctx, &pbRes.CreateReservationRequest{
+			UserId:    reqBody.UserID,
+			RoomId:    reqBody.RoomID,
+			StartDate: timestamppb.New(start),
+			EndDate:   timestamppb.New(end),
+		})
+		if err != nil {
+			log.Printf("❌ Reservation failed: %v", err)
+			http.Error(w, "Reservation failed", http.StatusInternalServerError)
+			return
+		}
+
+		// Return response (Status should be PENDING)
+		jsonResponse(w, map[string]interface{}{
+			"reservation_id": res.ReservationId,
+			"status":         res.Status.String(), // Convert Enum to String
+		})
+	})
+
+	// =========================================================================
+	// 🔑 Key Routes (Debug/Manual)
+	// =========================================================================
 	mux.HandleFunc("/keys/generate", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-
 		var reqBody struct {
 			ReservationID string `json:"reservation_id"`
-			ValidFrom     string `json:"valid_from"`     // ISO 8601 format
-			ValidUntil    string `json:"valid_until"`   // ISO 8601 format
+			ValidFrom     string `json:"valid_from"`
+			ValidUntil    string `json:"valid_until"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}
 
-		// Parse timestamps
-		validFrom, err := time.Parse(time.RFC3339, reqBody.ValidFrom)
-		if err != nil {
-			http.Error(w, "Invalid valid_from format (use RFC3339)", http.StatusBadRequest)
-			return
-		}
-		validUntil, err := time.Parse(time.RFC3339, reqBody.ValidUntil)
-		if err != nil {
-			http.Error(w, "Invalid valid_until format (use RFC3339)", http.StatusBadRequest)
-			return
-		}
+		// Parse RFC3339
+		validFrom, _ := time.Parse(time.RFC3339, reqBody.ValidFrom)
+		validUntil, _ := time.Parse(time.RFC3339, reqBody.ValidUntil)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		log.Printf("[BFF] Generating key for reservation: %s", reqBody.ReservationID)
-
-		grpcRes, err := keyClient.GenerateKey(ctx, &pbKey.GenerateKeyRequest{
+		res, err := keyClient.GenerateKey(ctx, &pbKey.GenerateKeyRequest{
 			ReservationId: reqBody.ReservationID,
 			ValidFrom:     timestamppb.New(validFrom),
 			ValidUntil:    timestamppb.New(validUntil),
 		})
-
 		if err != nil {
-			log.Printf("❌ GenerateKey failed: %v", err)
-			http.Error(w, fmt.Sprintf("GenerateKey failed: %v", err), http.StatusInternalServerError)
+			http.Error(w, "Key generation failed", http.StatusInternalServerError)
 			return
 		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"key_code":  grpcRes.KeyCode,
-			"device_id": grpcRes.DeviceId,
+		jsonResponse(w, map[string]interface{}{
+			"key_code":  res.KeyCode,
+			"device_id": res.DeviceId,
 		})
 	})
 
-	// POST /keys/revoke Endpoint
-	mux.HandleFunc("/keys/revoke", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		var reqBody struct {
-			ReservationID string `json:"reservation_id"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		log.Printf("[BFF] Revoking key for reservation: %s", reqBody.ReservationID)
-
-		grpcRes, err := keyClient.RevokeKey(ctx, &pbKey.RevokeKeyRequest{
-			ReservationId: reqBody.ReservationID,
-		})
-
-		if err != nil {
-			log.Printf("❌ RevokeKey failed: %v", err)
-			http.Error(w, fmt.Sprintf("RevokeKey failed: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": grpcRes.Success,
-		})
-	})
-
-	// 5. Start HTTP Server
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	// 4. Start Server
+	port := getEnv("PORT", "8080")
 	log.Printf("🌐 API Gateway listening on port %s", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
+}
+
+// --- Helpers ---
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
+func mustConnectGrpc(name, addr string) *grpc.ClientConn {
+	log.Printf("🔌 Connecting to %s at %s...", name, addr)
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to %s: %v", name, err)
+	}
+	return conn
+}
+
+func jsonResponse(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
 }
