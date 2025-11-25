@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/google/uuid"
 	pb "github.com/karimiku/smart-stay-platform/pkg/genproto/auth"
+	
+	"github.com/karimiku/smart-stay-platform/cmd/auth-service/jwt"
 )
 
 // server implements the AuthServiceServer interface generated from protobuf.
@@ -26,32 +29,54 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 	}, nil
 }
 
-// Login authenticates a user and returns a token.
+// Login authenticates a user and returns a JWT token.
 func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	log.Printf("🔑 Login request received for email: %s", req.Email)
 
 	// TODO: Implement DB lookup and password verification here.
+	// For now, we'll generate a token for any email (demo purposes)
+	
+	// Generate user ID (in production, get from DB)
+	userID := uuid.New().String()
+	
+	// Generate JWT token
+	expiresIn := 3600 * time.Second // 1 hour
+	token, err := jwt.GenerateToken(userID, "guest", req.Email, expiresIn)
+	if err != nil {
+		log.Printf("❌ Failed to generate JWT token: %v", err)
+		return nil, err
+	}
 
-	// Return a dummy JWT token for now
+	log.Printf("✅ JWT token generated for user: %s", userID)
 	return &pb.LoginResponse{
-		AccessToken: "dummy-jwt-token-example",
-		ExpiresIn:   3600,
+		AccessToken: token,
+		ExpiresIn:   int64(expiresIn.Seconds()),
 	}, nil
 }
 
-// Validate checks if the token is valid.
+// Validate checks if the JWT token is valid and extracts user information.
 func (s *server) Validate(ctx context.Context, req *pb.ValidateRequest) (*pb.ValidateResponse, error) {
-	log.Printf("🛡️ Validate request received for token: %s", req.AccessToken)
+	tokenPreview := req.AccessToken
+	if len(tokenPreview) > 20 {
+		tokenPreview = tokenPreview[:20] + "..."
+	}
+	log.Printf("🛡️ Validate request received for token: %s", tokenPreview)
 
-	// TODO: Implement JWT verification logic here.
+	// Validate JWT token
+	claims, err := jwt.ValidateToken(req.AccessToken)
+	if err != nil {
+		log.Printf("❌ Token validation failed: %v", err)
+		return &pb.ValidateResponse{
+			Valid:  false,
+			UserId: "",
+			Role:   "",
+		}, nil
+	}
 
-	// Return valid response for dummy token
-	isValid := req.AccessToken == "dummy-jwt-token-example"
-	// Dummy user ID (in production, extract from JWT token)
-	dummyUserID := "550e8400-e29b-41d4-a716-446655440000"
+	log.Printf("✅ Token validated for user: %s, role: %s", claims.UserID, claims.Role)
 	return &pb.ValidateResponse{
-		Valid:  isValid,
-		UserId: dummyUserID,
-		Role:   "guest",
+		Valid:  true,
+		UserId: claims.UserID,
+		Role:   claims.Role,
 	}, nil
 }
