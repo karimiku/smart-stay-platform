@@ -48,6 +48,9 @@ smart-stay-platform/
 ├── proto/               # gRPCの契約 (.protoファイルソース)
 ├── cmd/                 # 実行可能なアプリケーション
 │   ├── api-gateway/     # BFFの実装
+│   │   ├── handlers/   # HTTPハンドラー
+│   │   ├── middleware/ # 認証ミドルウェア
+│   │   └── utils/      # ユーティリティ関数
 │   ├── auth-service/    # 認証サービス
 │   ├── key-service/     # 鍵サービス
 │   └── reservation-service/  # 予約サービス
@@ -112,10 +115,13 @@ docker-compose up api-gateway auth-service pubsub-emulator
 
 ### API Gateway (BFF) - `http://localhost:8080`
 
-#### 認証
+> **注意**: 保護されたエンドポイントは `Authorization: Bearer <token>` ヘッダーが必要です。
+
+#### 認証（公開エンドポイント）
 
 - **POST `/login`**
   - ユーザーログイン
+  - 認証: 不要
   - リクエスト:
     ```json
     {
@@ -131,14 +137,35 @@ docker-compose up api-gateway auth-service pubsub-emulator
     }
     ```
 
-#### 予約
+#### ユーザー情報（保護エンドポイント）
 
-- **POST `/reservations`**
-  - 予約を作成（Saga パターンの開始）
-  - リクエスト:
+- **GET `/me`**
+  - 現在のユーザー情報を取得
+  - 認証: 必須
+  - リクエストヘッダー:
+    ```
+    Authorization: Bearer <token>
+    ```
+  - レスポンス:
     ```json
     {
       "user_id": "550e8400-e29b-41d4-a716-446655440000",
+      "role": "guest"
+    }
+    ```
+
+#### 予約（保護エンドポイント）
+
+- **POST `/reservations`**
+  - 予約を作成（Saga パターンの開始）
+  - 認証: 必須
+  - リクエストヘッダー:
+    ```
+    Authorization: Bearer <token>
+    ```
+  - リクエストボディ:
+    ```json
+    {
       "room_id": 505,
       "start_date": "2024-12-25",
       "end_date": "2024-12-27"
@@ -152,15 +179,21 @@ docker-compose up api-gateway auth-service pubsub-emulator
     }
     ```
   - 処理フロー:
-    1. Reservation Service が予約を作成（UUID で一意の ID を生成）
-    2. `ReservationCreated` イベントを Pub/Sub に発行
-    3. Key Service がイベントを購読し、自動的に鍵を生成
+    1. JWTトークンからuser_idを取得
+    2. Reservation Service が予約を作成（UUID で一意の ID を生成）
+    3. `ReservationCreated` イベントを Pub/Sub に発行
+    4. Key Service がイベントを購読し、自動的に鍵を生成
 
-#### 鍵管理（デバッグ用）
+#### 鍵管理（保護エンドポイント）
 
 - **POST `/keys/generate`**
-  - 手動で鍵を生成
-  - リクエスト:
+  - 手動で鍵を生成（デバッグ用）
+  - 認証: 必須
+  - リクエストヘッダー:
+    ```
+    Authorization: Bearer <token>
+    ```
+  - リクエストボディ:
     ```json
     {
       "reservation_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -175,6 +208,33 @@ docker-compose up api-gateway auth-service pubsub-emulator
       "device_id": "smart-lock-device-001"
     }
     ```
+
+## 🔐 認証
+
+### JWT トークンの使用方法
+
+1. **ログインしてトークンを取得**
+   ```bash
+   curl -X POST http://localhost:8080/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"user@example.com","password":"password123"}'
+   ```
+
+2. **トークンを使用して保護されたエンドポイントにアクセス**
+   ```bash
+   curl -X POST http://localhost:8080/reservations \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <token>" \
+     -d '{"room_id":505,"start_date":"2024-12-25","end_date":"2024-12-27"}'
+   ```
+
+### 認証ミドルウェア
+
+API Gateway では、すべての保護されたエンドポイントで認証ミドルウェアが動作します：
+
+- JWTトークンを検証
+- ユーザー情報（user_id, role）をコンテキストに設定
+- 認証失敗時は401 Unauthorizedを返す
 
 ## 🔄 イベント駆動フロー
 
@@ -254,19 +314,23 @@ docker-compose down
 - [x] イベント駆動型の鍵生成フロー
 - [x] 予約日付情報を含むイベントペイロード
 - [x] Graceful Shutdown の実装
+- [x] 認証ミドルウェアの実装（API Gateway）
+- [x] JWT トークン検証とユーザーコンテキスト管理
+- [x] ハンドラーとミドルウェアの分離（コード整理）
 
 ### 🚧 実装中
 
-- [ ] JWT 認証の実装（Auth Service）
+- [ ] JWT トークン生成の実装（Auth Service）
 - [ ] パスワードハッシュ化
 - [ ] データベース統合（PostgreSQL/Supabase）
 
 ### 📋 将来実装予定
 
 - [ ] 予約ステータスの更新フロー（PENDING → CONFIRMED）
+- [ ] 予約一覧取得（GET /reservations）
+- [ ] 予約詳細取得（GET /reservations/:id）
 - [ ] 決済処理の統合
 - [ ] 外部スマートロック API との統合
-- [ ] 認証ミドルウェアの実装（API Gateway）
 - [ ] エラーハンドリングとリトライロジック
 - [ ] 分散トレーシング（OpenTelemetry）
 - [ ] メトリクス収集とモニタリング
