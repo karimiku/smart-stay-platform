@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 
 	pbAuth "github.com/karimiku/smart-stay-platform/pkg/genproto/auth"
@@ -35,6 +37,23 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate email
+	reqBody.Email = strings.TrimSpace(reqBody.Email)
+	if reqBody.Email == "" {
+		utils.ErrorResponse(w, http.StatusBadRequest, "Email is required")
+		return
+	}
+	if !isValidEmail(reqBody.Email) {
+		utils.ErrorResponse(w, http.StatusBadRequest, "Invalid email format")
+		return
+	}
+
+	// Validate password
+	if strings.TrimSpace(reqBody.Password) == "" {
+		utils.ErrorResponse(w, http.StatusBadRequest, "Password is required")
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -53,5 +72,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		"token":      res.AccessToken,
 		"expires_in": res.ExpiresIn,
 	})
+}
+
+// isValidEmail validates email format using regex
+func isValidEmail(email string) bool {
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	return emailRegex.MatchString(email)
 }
 
