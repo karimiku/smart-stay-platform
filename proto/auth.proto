@@ -32,7 +32,7 @@ message RegisterRequest {
 
 // Response message for user registration.
 message RegisterResponse {
-  int64 user_id = 1;     // The internal ID of the created user.
+  string user_id = 1;     // The internal ID of the created user (UUID).
 }
 
 // Request message for user login.
@@ -54,7 +54,7 @@ message ValidateRequest {
 
 // Response message for token validation.
 message ValidateResponse {
-  int64 user_id = 1;     // The authenticated user ID.
+  string user_id = 1;     // The authenticated user ID (UUID).
   bool valid = 2;        // True if the token is valid and active.
   string role = 3;       // Authorization role (e.g., "guest", "owner").
 }

@@ -38,7 +38,7 @@ enum ReservationStatus {
 
 message Reservation {
   string id = 1;           // UUID
-  int64 user_id = 2;
+  string user_id = 2;      // UUID
   int64 room_id = 3;
   google.protobuf.Timestamp start_date = 4;
   google.protobuf.Timestamp end_date = 5;
@@ -47,7 +47,7 @@ message Reservation {
 }
 
 message CreateReservationRequest {
-  int64 user_id = 1;
+  string user_id = 1;      // UUID
   int64 room_id = 2;
   google.protobuf.Timestamp start_date = 3;
   google.protobuf.Timestamp end_date = 4;
