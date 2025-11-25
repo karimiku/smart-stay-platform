@@ -4,6 +4,7 @@ go 1.25.1
 
 require (
 	cloud.google.com/go/pubsub v1.50.1
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	google.golang.org/grpc v1.77.0
 	google.golang.org/protobuf v1.36.10
 )
