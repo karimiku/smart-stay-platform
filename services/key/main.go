@@ -30,6 +30,8 @@ type EventPayload struct {
 	EventType     string `json:"event_type"`
 	ReservationID string `json:"reservation_id"`
 	UserID        int64  `json:"user_id"`
+	StartDate     time.Time `json:"start_date"`
+	EndDate       time.Time `json:"end_date"`
 }
 
 func main() {
@@ -86,9 +88,8 @@ func main() {
 				
 				// Generate key for the reservation
 				// Use reservation start/end dates (simplified: use current time + 24h)
-				now := time.Now()
-				validFrom := now
-				validUntil := now.Add(24 * time.Hour)
+				validFrom := event.StartDate
+				validUntil := event.EndDate
 				
 				_, err := keySvc.GenerateKey(ctx, &pb.GenerateKeyRequest{
 					ReservationId: event.ReservationID,
