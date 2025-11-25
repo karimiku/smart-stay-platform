@@ -91,7 +91,7 @@ func main() {
 		}
 
 		var reqBody struct {
-			UserID    int64  `json:"user_id"`
+			UserID    string `json:"user_id"` // UUID
 			RoomID    int64  `json:"room_id"`
 			StartDate string `json:"start_date"` // Format: YYYY-MM-DD
 			EndDate   string `json:"end_date"`   // Format: YYYY-MM-DD
@@ -117,7 +117,7 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		log.Printf("[BFF] Creating Reservation for User %d", reqBody.UserID)
+		log.Printf("[BFF] Creating Reservation for User %s", reqBody.UserID)
 		
 		// Call gRPC (Trigger Pub/Sub event inside Reservation Service)
 		res, err := resClient.CreateReservation(ctx, &pbRes.CreateReservationRequest{

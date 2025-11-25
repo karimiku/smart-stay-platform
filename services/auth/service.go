@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	// ⚠️ Replace with your actual GitHub username
+	"github.com/google/uuid"
 	pb "github.com/karimiku/smart-stay-platform/pkg/genproto/auth"
 )
 
@@ -19,9 +19,10 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 
 	// TODO: Implement DB insertion and password hashing here.
 	
-	// Return a dummy user ID for now
+	// Generate UUID for new user
+	userID := uuid.New().String()
 	return &pb.RegisterResponse{
-		UserId: 1001,
+		UserId: userID,
 	}, nil
 }
 
@@ -46,9 +47,11 @@ func (s *server) Validate(ctx context.Context, req *pb.ValidateRequest) (*pb.Val
 
 	// Return valid response for dummy token
 	isValid := req.AccessToken == "dummy-jwt-token-example"
+	// Dummy user ID (in production, extract from JWT token)
+	dummyUserID := "550e8400-e29b-41d4-a716-446655440000"
 	return &pb.ValidateResponse{
 		Valid:  isValid,
-		UserId: 1001,
+		UserId: dummyUserID,
 		Role:   "guest",
 	}, nil
 }

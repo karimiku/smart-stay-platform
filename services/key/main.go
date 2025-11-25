@@ -29,7 +29,7 @@ const (
 type EventPayload struct {
 	EventType     string `json:"event_type"`
 	ReservationID string `json:"reservation_id"`
-	UserID        int64  `json:"user_id"`
+	UserID        string `json:"user_id"` // UUID
 	StartDate     time.Time `json:"start_date"`
 	EndDate       time.Time `json:"end_date"`
 }

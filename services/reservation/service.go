@@ -23,14 +23,14 @@ type server struct {
 type EventPayload struct {
 	EventType     string 	`json:"event_type"`
 	ReservationID string 	`json:"reservation_id"`
-	UserID        int64  	`json:"user_id"`
+	UserID        string 	`json:"user_id"` // UUID
 	StartDate	  time.Time `json:"start_date"`
 	EndDate		  time.Time `json:"end_date"`
 }
 
 // CreateReservation handles new booking requests.
 func (s *server) CreateReservation(ctx context.Context, req *pb.CreateReservationRequest) (*pb.CreateReservationResponse, error) {
-	log.Printf("📝 Received CreateReservation request. User: %d, Room: %d", req.UserId, req.RoomId)
+	log.Printf("📝 Received CreateReservation request. User: %s, Room: %d", req.UserId, req.RoomId)
 
 	// 1. Simulate DB Insert (Generate a dummy ID)
 	resID := uuid.New().String()
@@ -80,7 +80,7 @@ func (s *server) GetReservation(ctx context.Context, req *pb.GetReservationReque
 	return &pb.GetReservationResponse{
 		Reservation: &pb.Reservation{
 			Id:         req.ReservationId,
-			UserId:     1001,
+			UserId:     "550e8400-e29b-41d4-a716-446655440000", // Dummy UUID
 			RoomId:     505,
 			StartDate:  timestamppb.New(time.Now()),
 			EndDate:    timestamppb.New(time.Now().Add(24 * time.Hour)),
