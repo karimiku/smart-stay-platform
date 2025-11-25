@@ -9,6 +9,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/google/uuid"
 	pb "github.com/karimiku/smart-stay-platform/pkg/genproto/reservation"
 )
 
@@ -20,9 +21,11 @@ type server struct {
 
 // EventPayload defines the structure of the message sent to Pub/Sub.
 type EventPayload struct {
-	EventType     string `json:"event_type"`
-	ReservationID string `json:"reservation_id"`
-	UserID        int64  `json:"user_id"`
+	EventType     string 	`json:"event_type"`
+	ReservationID string 	`json:"reservation_id"`
+	UserID        int64  	`json:"user_id"`
+	StartDate	  time.Time `json:"start_date"`
+	EndDate		  time.Time `json:"end_date"`
 }
 
 // CreateReservation handles new booking requests.
@@ -30,7 +33,7 @@ func (s *server) CreateReservation(ctx context.Context, req *pb.CreateReservatio
 	log.Printf("📝 Received CreateReservation request. User: %d, Room: %d", req.UserId, req.RoomId)
 
 	// 1. Simulate DB Insert (Generate a dummy ID)
-	resID := "res-2025-001" // In reality, this comes from the DB
+	resID := uuid.New().String()
 
 	// 2. Publish Event to Pub/Sub (Asynchronous)
 	// We don't wait for Key Service here. We just shout "Created!" and return.
@@ -38,8 +41,13 @@ func (s *server) CreateReservation(ctx context.Context, req *pb.CreateReservatio
 		EventType:     "ReservationCreated",
 		ReservationID: resID,
 		UserID:        req.UserId,
+		StartDate:     req.StartDate.AsTime(),
+		EndDate:  	   req.EndDate.AsTime(),
 	}
-	eventData, _ := json.Marshal(event)
+	eventData, err := json.Marshal(event)
+	if err != nil {
+		log.Printf("failed to marshal event: %v", err)
+	}
 
 	// Publish the message
 	result := s.pubsubTopic.Publish(ctx, &pubsub.Message{
