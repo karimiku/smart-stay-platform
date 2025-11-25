@@ -81,8 +81,8 @@ func (ReservationStatus) EnumDescriptor() ([]byte, []int) {
 
 type Reservation struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // UUID
-	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                       // UUID
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID
 	RoomId        int64                  `protobuf:"varint,3,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
 	StartDate     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
 	EndDate       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty"`
@@ -129,11 +129,11 @@ func (x *Reservation) GetId() string {
 	return ""
 }
 
-func (x *Reservation) GetUserId() int64 {
+func (x *Reservation) GetUserId() string {
 	if x != nil {
 		return x.UserId
 	}
-	return 0
+	return ""
 }
 
 func (x *Reservation) GetRoomId() int64 {
@@ -173,7 +173,7 @@ func (x *Reservation) GetStatus() ReservationStatus {
 
 type CreateReservationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID
 	RoomId        int64                  `protobuf:"varint,2,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
 	StartDate     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
 	EndDate       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty"`
@@ -211,11 +211,11 @@ func (*CreateReservationRequest) Descriptor() ([]byte, []int) {
 	return file_reservation_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CreateReservationRequest) GetUserId() int64 {
+func (x *CreateReservationRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
 	}
-	return 0
+	return ""
 }
 
 func (x *CreateReservationRequest) GetRoomId() int64 {
@@ -386,7 +386,7 @@ const file_reservation_proto_rawDesc = "" +
 	"\x11reservation.proto\x12\vreservation\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9a\x02\n" +
 	"\vReservation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x17\n" +
 	"\aroom_id\x18\x03 \x01(\x03R\x06roomId\x129\n" +
 	"\n" +
 	"start_date\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tstartDate\x125\n" +
@@ -395,7 +395,7 @@ const file_reservation_proto_rawDesc = "" +
 	"totalPrice\x126\n" +
 	"\x06status\x18\a \x01(\x0e2\x1e.reservation.ReservationStatusR\x06status\"\xbe\x01\n" +
 	"\x18CreateReservationRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\aroom_id\x18\x02 \x01(\x03R\x06roomId\x129\n" +
 	"\n" +
 	"start_date\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tstartDate\x125\n" +
