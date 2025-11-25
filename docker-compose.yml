@@ -7,7 +7,7 @@ services:
   auth-service:
     build:
       context: .
-      dockerfile: services/auth/Dockerfile
+      dockerfile: cmd/auth-service/Dockerfile
     container_name: auth-service
     environment:
       PORT: 50051
@@ -36,7 +36,7 @@ services:
   reservation-service:
     build:
       context: .
-      dockerfile: services/reservation/Dockerfile
+      dockerfile: cmd/reservation-service/Dockerfile
     container_name: reservation-service
     environment:
       PORT: 50052
@@ -55,7 +55,7 @@ services:
   key-service:
     build:
       context: .
-      dockerfile: services/key/Dockerfile
+      dockerfile: cmd/key-service/Dockerfile
     container_name: key-service
     environment:
       PORT: 50053
@@ -74,7 +74,7 @@ services:
   api-gateway:
     build:
       context: .
-      dockerfile: api-gateway/Dockerfile
+      dockerfile: cmd/api-gateway/Dockerfile
     container_name: api-gateway
     environment:
       PORT: 8080
