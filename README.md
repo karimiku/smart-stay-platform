@@ -136,7 +136,7 @@ docker-compose up api-gateway auth-service pubsub-emulator
   - リクエスト:
     ```json
     {
-      "user_id": 1001,
+      "user_id": "550e8400-e29b-41d4-a716-446655440000",
       "room_id": 505,
       "start_date": "2024-12-25",
       "end_date": "2024-12-27"
@@ -189,7 +189,7 @@ docker-compose up api-gateway auth-service pubsub-emulator
      {
        "event_type": "ReservationCreated",
        "reservation_id": "550e8400-...",
-       "user_id": 1001,
+       "user_id": "550e8400-e29b-41d4-a716-446655440000",
        "start_date": "2024-12-25T00:00:00Z",
        "end_date": "2024-12-27T23:59:59Z"
      }
