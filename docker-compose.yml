@@ -11,6 +11,7 @@ services:
     container_name: auth-service
     environment:
       PORT: 50051
+      JWT_SECRET: ${JWT_SECRET:-smart-stay-platform-secret-key-change-in-production}
     ports:
       - "50051:50051"
     networks:
