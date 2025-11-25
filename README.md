@@ -83,6 +83,188 @@ make proto
 
 → これにより、`pkg/genproto` 配下に Go のインターフェースとデータ構造が生成されます。
 
-## ライセンス
+#### ローカル開発環境の起動
 
-このプロジェクトはポートフォリオ用のサンプル実装です。
+Docker Compose を使用して、すべてのサービスを一度に起動します。
+
+```bash
+docker-compose up --build
+```
+
+これにより、以下のサービスが起動します：
+
+- **pubsub-emulator** (ポート 8085): Google Cloud Pub/Sub のローカルエミュレータ
+- **auth-service** (ポート 50051): 認証サービス
+- **reservation-service** (ポート 50052): 予約サービス
+- **key-service** (ポート 50053): 鍵サービス
+- **api-gateway** (ポート 8080): API ゲートウェイ（BFF）
+
+個別サービスの起動：
+
+```bash
+# 例: API Gateway と Auth Service のみ起動
+docker-compose up api-gateway auth-service pubsub-emulator
+```
+
+## 📡 API エンドポイント
+
+### API Gateway (BFF) - `http://localhost:8080`
+
+#### 認証
+
+- **POST `/login`**
+  - ユーザーログイン
+  - リクエスト:
+    ```json
+    {
+      "email": "user@example.com",
+      "password": "password123"
+    }
+    ```
+  - レスポンス:
+    ```json
+    {
+      "token": "dummy-jwt-token-example",
+      "expires_in": 3600
+    }
+    ```
+
+#### 予約
+
+- **POST `/reservations`**
+  - 予約を作成（Saga パターンの開始）
+  - リクエスト:
+    ```json
+    {
+      "user_id": 1001,
+      "room_id": 505,
+      "start_date": "2024-12-25",
+      "end_date": "2024-12-27"
+    }
+    ```
+  - レスポンス:
+    ```json
+    {
+      "reservation_id": "550e8400-e29b-41d4-a716-446655440000",
+      "status": "PENDING"
+    }
+    ```
+  - 処理フロー:
+    1. Reservation Service が予約を作成（UUID で一意の ID を生成）
+    2. `ReservationCreated` イベントを Pub/Sub に発行
+    3. Key Service がイベントを購読し、自動的に鍵を生成
+
+#### 鍵管理（デバッグ用）
+
+- **POST `/keys/generate`**
+  - 手動で鍵を生成
+  - リクエスト:
+    ```json
+    {
+      "reservation_id": "550e8400-e29b-41d4-a716-446655440000",
+      "valid_from": "2024-12-25T00:00:00Z",
+      "valid_until": "2024-12-27T23:59:59Z"
+    }
+    ```
+  - レスポンス:
+    ```json
+    {
+      "key_code": "1234",
+      "device_id": "smart-lock-device-001"
+    }
+    ```
+
+## 🔄 イベント駆動フロー
+
+### 予約作成から鍵生成までの流れ
+
+```
+1. クライアント → API Gateway (POST /reservations)
+   ↓
+2. API Gateway → Reservation Service (gRPC: CreateReservation)
+   ↓
+3. Reservation Service:
+   - UUID で予約 ID を生成
+   - Pub/Sub に ReservationCreated イベントを発行
+     {
+       "event_type": "ReservationCreated",
+       "reservation_id": "550e8400-...",
+       "user_id": 1001,
+       "start_date": "2024-12-25T00:00:00Z",
+       "end_date": "2024-12-27T23:59:59Z"
+     }
+   ↓
+4. Key Service (Pub/Sub 購読):
+   - ReservationCreated イベントを受信
+   - 予約の開始日・終了日を使用して鍵を生成
+   - 4桁の PIN コードを生成
+   ↓
+5. クライアントに PENDING ステータスで即座に応答
+```
+
+## 🔧 開発コマンド
+
+### Makefile コマンド
+
+```bash
+# gRPC コード生成
+make proto
+
+# 生成されたコードをクリーンアップ
+make clean
+
+# 必要なツールをインストール
+make install-tools
+
+# ヘルプを表示
+make help
+```
+
+### Docker Compose コマンド
+
+```bash
+# すべてのサービスを起動（ビルド込み）
+docker-compose up --build
+
+# バックグラウンドで起動
+docker-compose up -d
+
+# 特定のサービスのみ起動
+docker-compose up api-gateway auth-service
+
+# ログを確認
+docker-compose logs -f api-gateway
+
+# サービスを停止
+docker-compose down
+```
+
+## 📝 実装状況
+
+### ✅ 実装済み
+
+- [x] マイクロサービスアーキテクチャの基本構造
+- [x] gRPC サービス定義とコード生成
+- [x] API Gateway (BFF) による REST → gRPC 変換
+- [x] Docker Compose によるローカル開発環境
+- [x] Pub/Sub エミュレータの統合
+- [x] 予約作成時の UUID 生成
+- [x] イベント駆動型の鍵生成フロー
+- [x] 予約日付情報を含むイベントペイロード
+- [x] Graceful Shutdown の実装
+
+### 🚧 実装中
+
+- [ ] JWT 認証の実装（Auth Service）
+- [ ] パスワードハッシュ化
+- [ ] データベース統合（PostgreSQL/Supabase）
+
+### 📋 将来実装予定
+
+- [ ] 予約ステータスの更新フロー（PENDING → CONFIRMED）
+- [ ] 決済処理の統合
+- [ ] 外部スマートロック API との統合
+- [ ] 認証ミドルウェアの実装（API Gateway）
+- [ ] エラーハンドリングとリトライロジック
+- [ ] 分散トレーシング（OpenTelemetry）
+- [ ] メトリクス収集とモニタリング
