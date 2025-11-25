@@ -15,30 +15,38 @@ import (
 )
 
 func main() {
-	// 1. Configure the port (Default: 50051)
+	// 1. Log JWT secret status (for debugging)
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Println("⚠️  JWT_SECRET not set, using default (development only)")
+	} else {
+		log.Println("✅ JWT_SECRET loaded from environment")
+	}
+
+	// 2. Configure the port (Default: 50051)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "50051"
 	}
 
-	// 2. Initialize the listener
+	// 3. Initialize the listener
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	// 3. Create a new gRPC server instance
+	// 4. Create a new gRPC server instance
 	grpcServer := grpc.NewServer()
 
-	// 4. Register the AuthService implementation
+	// 5. Register the AuthService implementation
 	// We pass the struct defined in service.go
 	authService := &server{}
 	pb.RegisterAuthServiceServer(grpcServer, authService)
 
-	// 5. Enable Server Reflection (Useful for debugging with tools like Evans or Postman)
+	// 6. Enable Server Reflection (Useful for debugging with tools like Evans or Postman)
 	reflection.Register(grpcServer)
 
-	// 6. Start the server with graceful shutdown handling
+	// 7. Start the server with graceful shutdown handling
 	go func() {
 		log.Printf("🚀 Auth Service is running on port %s", port)
 		if err := grpcServer.Serve(lis); err != nil {
