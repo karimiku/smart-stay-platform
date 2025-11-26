@@ -44,4 +44,17 @@ install-tools: ## Install necessary protobuf tools (Run once)
 	@echo "🛠 Installing protoc plugins..."
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	@go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 	@echo "✅ Tools installed!"
+
+.PHONY: sqlc
+sqlc: ## Generate database code using sqlc
+	@echo "🚀 Generating database code with sqlc..."
+	@sqlc generate
+	@echo "✅ Done!"
+
+.PHONY: sqlc-verify
+sqlc-verify: ## Verify sqlc configuration
+	@echo "🔍 Verifying sqlc configuration..."
+	@sqlc vet
+	@echo "✅ Done!"
