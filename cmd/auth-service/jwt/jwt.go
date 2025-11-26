@@ -72,13 +72,13 @@ func ValidateToken(tokenString string) (*Claims, error) {
 }
 
 // getJWTSecret retrieves JWT secret from environment variable
-// Falls back to a default secret for development (NOT for production)
+// JWT_SECRET MUST be set via environment variable
+// For local development, create .env file from .env.example
+// Generate a secure secret: openssl rand -base64 32
 func getJWTSecret() string {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		// Default secret for development only
-		// In production, this MUST be set via environment variable
-		return "smart-stay-platform-secret-key-change-in-production"
+		panic("JWT_SECRET environment variable is required. Please set it in .env file or environment.")
 	}
 	return secret
 }

@@ -1,6 +1,6 @@
 # Smart Stay Platform
 
-Go、gRPC、Cloud Pub/Sub を用いた、オーナー/ゲスト向けのスマートステイ・プラットフォーム。マイクロサービスアーキテクチャ、BFF パターン、Cloud Run 上でのイベント駆動設計を採用しています。このプロジェクトは、会員制/契約ベースの宿泊体験を実現するために、認証、デジタル鍵生成、予約のライフサイクル管理に特化しています。
+Go、gRPC、Cloud Pub/Sub を用いた、スマートヴィラ予約プラットフォーム。マイクロサービスアーキテクチャ、BFF パターン、Cloud Run 上でのイベント駆動設計を採用しています。このプロジェクトは、会員制/契約ベースの宿泊体験を実現するために、認証、デジタル鍵生成、予約のライフサイクル管理に特化しています。
 
 ## 🏗️ アーキテクチャ
 
@@ -44,20 +44,59 @@ Go、gRPC、Cloud Pub/Sub を用いた、オーナー/ゲスト向けのスマ�
 ```
 smart-stay-platform/
 ├── go.mod
+├── go.sum
 ├── Makefile             # gRPCコード生成と環境構築を自動化
+├── sqlc.yaml            # sqlc設定ファイル（型安全なSQLクエリ生成）
+├── docker-compose.yml    # ローカル開発環境の定義
+├── .gitignore           # Git除外設定（.envファイルなど）
+├── .env.example         # 環境変数のテンプレート
 ├── proto/               # gRPCの契約 (.protoファイルソース)
+│   ├── auth.proto
+│   ├── key.proto
+│   └── reservation.proto
 ├── cmd/                 # 実行可能なアプリケーション
 │   ├── api-gateway/     # BFFの実装
 │   │   ├── handlers/   # HTTPハンドラー
-│   │   ├── middleware/ # 認証ミドルウェア
-│   │   └── utils/      # ユーティリティ関数
+│   │   │   ├── auth.go
+│   │   │   ├── key.go
+│   │   │   ├── reservation.go
+│   │   │   └── user.go
+│   │   ├── middleware/ # ミドルウェア
+│   │   │   ├── auth.go  # 認証ミドルウェア
+│   │   │   └── cors.go  # CORSミドルウェア
+│   │   ├── utils/      # ユーティリティ関数
+│   │   ├── main.go
+│   │   └── Dockerfile
 │   ├── auth-service/    # 認証サービス
+│   │   ├── jwt/         # JWT生成・検証
+│   │   ├── main.go
+│   │   ├── service.go
+│   │   └── Dockerfile
 │   ├── key-service/     # 鍵サービス
+│   │   ├── main.go
+│   │   ├── service.go
+│   │   └── Dockerfile
 │   └── reservation-service/  # 予約サービス
+│       ├── main.go
+│       ├── service.go
+│       └── Dockerfile
 ├── internal/            # プロジェクト内部のみで使うコード
-│   └── events/          # 共通イベント構造体 (EventPayload など)
+│   ├── database/        # データベース関連
+│   │   ├── migrations/  # データベースマイグレーション
+│   │   │   └── 001_create_users.sql
+│   │   ├── queries/     # SQLクエリ定義（sqlc用）
+│   │   │   └── users.sql
+│   │   ├── db.go        # データベース接続（sqlc生成）
+│   │   ├── models.go    # データモデル（sqlc生成）
+│   │   ├── querier.go   # クエリインターフェース（sqlc生成）
+│   │   └── users.sql.go # ユーザークエリ実装（sqlc生成）
+│   └── events/          # 共通イベント構造体
+│       └── payload.go   # EventPayload など
 └── pkg/                 # 外部から import 可能な共通コード
-    └── genproto/        # 生成されたgRPCコード (auth, key, reservation)
+    └── genproto/        # 生成されたgRPCコード
+        ├── auth/
+        ├── key/
+        └── reservation/
 ```
 
 ## 🚀 環境構築 (Getting Started)
@@ -78,7 +117,22 @@ git clone https://github.com/yourusername/smart-stay-platform.git
 cd smart-stay-platform
 ```
 
+#### 環境変数の設定
+
+機密情報は環境変数で管理します。`.env.example`をコピーして`.env`を作成し、実際の値を設定してください。
+
+```bash
+cp .env.example .env
+# .envファイルを編集して、実際の値を設定
+```
+
+**重要**: `.env`ファイルは絶対にコミットしないでください（`.gitignore`で除外済み）。
+
+**本番環境では、必ず環境変数を設定してください。デフォルト値は開発環境専用です。**
+
 #### コード生成
+
+**gRPC コードの生成**
 
 `proto/` フォルダの定義に基づき、Go コードを生成します。
 
@@ -87,6 +141,16 @@ make proto
 ```
 
 → これにより、`pkg/genproto` 配下に Go のインターフェースとデータ構造が生成されます。
+
+**データベースコードの生成**
+
+`sqlc`を使用して型安全な SQL クエリコードを生成します。
+
+```bash
+make sqlc
+```
+
+→ これにより、`internal/database` 配下にデータベースモデルとクエリ関数が生成されます。
 
 #### ローカル開発環境の起動
 
@@ -98,6 +162,7 @@ docker-compose up --build
 
 これにより、以下のサービスが起動します：
 
+- **postgres** (ポート 5432): PostgreSQL データベース
 - **pubsub-emulator** (ポート 8085): Google Cloud Pub/Sub のローカルエミュレータ
 - **auth-service** (ポート 50051): 認証サービス
 - **reservation-service** (ポート 50052): 予約サービス
@@ -119,7 +184,31 @@ docker-compose up api-gateway auth-service pubsub-emulator
 
 #### 認証（公開エンドポイント）
 
+- **POST `/signup`**
+
+  - ユーザー新規登録
+  - 認証: 不要
+  - リクエスト:
+    ```json
+    {
+      "email": "user@example.com",
+      "password": "password123",
+      "name": "John Doe"
+    }
+    ```
+  - レスポンス:
+    ```json
+    {
+      "user_id": "550e8400-e29b-41d4-a716-446655440000",
+      "message": "User registered successfully"
+    }
+    ```
+  - エラー:
+    - `400 Bad Request`: メール形式が不正、パスワードが 8 文字未満、名前が空
+    - `409 Conflict`: メールアドレスが既に登録済み
+
 - **POST `/login`**
+
   - ユーザーログイン
   - 認証: 不要
   - リクエスト:
@@ -132,19 +221,35 @@ docker-compose up api-gateway auth-service pubsub-emulator
   - レスポンス:
     ```json
     {
-      "token": "dummy-jwt-token-example",
+      "message": "Login successful",
       "expires_in": 3600
     }
     ```
+  - 注意: JWT トークンは`httpOnly` Cookie (`auth_token`) として設定されます
+
+- **POST `/logout`**
+  - ユーザーログアウト
+  - 認証: 不要（Cookie をクリアするため）
+  - レスポンス:
+    ```json
+    {
+      "message": "Logout successful"
+    }
+    ```
+  - 注意: `auth_token` Cookie が削除されます
 
 #### ユーザー情報（保護エンドポイント）
 
 - **GET `/me`**
   - 現在のユーザー情報を取得
   - 認証: 必須
-  - リクエストヘッダー:
+  - リクエストヘッダーまたは Cookie:
     ```
     Authorization: Bearer <token>
+    ```
+    または
+    ```
+    Cookie: auth_token=<token>
     ```
   - レスポンス:
     ```json
@@ -159,9 +264,13 @@ docker-compose up api-gateway auth-service pubsub-emulator
 - **POST `/reservations`**
   - 予約を作成（Saga パターンの開始）
   - 認証: 必須
-  - リクエストヘッダー:
+  - リクエストヘッダーまたは Cookie:
     ```
     Authorization: Bearer <token>
+    ```
+    または
+    ```
+    Cookie: auth_token=<token>
     ```
   - リクエストボディ:
     ```json
@@ -179,7 +288,7 @@ docker-compose up api-gateway auth-service pubsub-emulator
     }
     ```
   - 処理フロー:
-    1. JWTトークンからuser_idを取得
+    1. JWT トークンから user_id を取得
     2. Reservation Service が予約を作成（UUID で一意の ID を生成）
     3. `ReservationCreated` イベントを Pub/Sub に発行
     4. Key Service がイベントを購読し、自動的に鍵を生成
@@ -189,9 +298,13 @@ docker-compose up api-gateway auth-service pubsub-emulator
 - **POST `/keys/generate`**
   - 手動で鍵を生成（デバッグ用）
   - 認証: 必須
-  - リクエストヘッダー:
+  - リクエストヘッダーまたは Cookie:
     ```
     Authorization: Bearer <token>
+    ```
+    または
+    ```
+    Cookie: auth_token=<token>
     ```
   - リクエストボディ:
     ```json
@@ -209,18 +322,73 @@ docker-compose up api-gateway auth-service pubsub-emulator
     }
     ```
 
+## 🔧 環境変数
+
+### 必要な環境変数
+
+| 変数名                | 説明                           | 必須                                              |
+| --------------------- | ------------------------------ | ------------------------------------------------- |
+| `POSTGRES_USER`       | PostgreSQL ユーザー名          | **必須**                                          |
+| `POSTGRES_PASSWORD`   | PostgreSQL パスワード          | **必須**                                          |
+| `POSTGRES_DB`         | PostgreSQL データベース名      | **必須**                                          |
+| `DATABASE_URL`        | データベース接続 URL           | **必須**                                          |
+| `JWT_SECRET`          | JWT トークン署名用シークレット | **必須**                                          |
+| `CORS_ALLOWED_ORIGIN` | CORS 許可オリジン              | オプション（デフォルト: `http://localhost:3000`） |
+
+### 環境変数の設定方法
+
+1. **開発環境（ローカル）**
+
+   ```bash
+   # .envファイルを作成（.env.exampleをコピー）
+   cp .env.example .env
+   # 必要に応じて値を変更
+   ```
+
+2. **本番環境**
+   - 環境変数を直接設定するか、シークレット管理サービスを使用
+   - **必ず強力なパスワードと JWT_SECRET を設定してください**
+   - JWT_SECRET の生成例: `openssl rand -base64 32`
+
+### セキュリティ注意事項
+
+- ⚠️ `.env`ファイルは絶対にコミットしないでください
+- ⚠️ デフォルト値は開発環境専用です
+- ⚠️ 本番環境では必ず環境変数を設定してください
+- ⚠️ JWT_SECRET は強力なランダム文字列を使用してください
+
 ## 🔐 認証
 
 ### JWT トークンの使用方法
 
-1. **ログインしてトークンを取得**
+1. **ユーザー登録（初回のみ）**
+
+   ```bash
+   curl -X POST http://localhost:8080/signup \
+     -H "Content-Type: application/json" \
+     -d '{"email":"user@example.com","password":"password123","name":"John Doe"}'
+   ```
+
+2. **ログイン（Cookie にトークンが保存されます）**
+
    ```bash
    curl -X POST http://localhost:8080/login \
      -H "Content-Type: application/json" \
+     -c cookies.txt \
      -d '{"email":"user@example.com","password":"password123"}'
    ```
 
-2. **トークンを使用して保護されたエンドポイントにアクセス**
+3. **Cookie を使用して保護されたエンドポイントにアクセス**
+
+   ```bash
+   curl -X POST http://localhost:8080/reservations \
+     -H "Content-Type: application/json" \
+     -b cookies.txt \
+     -d '{"room_id":505,"start_date":"2024-12-25","end_date":"2024-12-27"}'
+   ```
+
+   または、Authorization ヘッダーを使用：
+
    ```bash
    curl -X POST http://localhost:8080/reservations \
      -H "Content-Type: application/json" \
@@ -228,13 +396,21 @@ docker-compose up api-gateway auth-service pubsub-emulator
      -d '{"room_id":505,"start_date":"2024-12-25","end_date":"2024-12-27"}'
    ```
 
+4. **ログアウト（Cookie をクリア）**
+   ```bash
+   curl -X POST http://localhost:8080/logout \
+     -H "Content-Type: application/json" \
+     -b cookies.txt
+   ```
+
 ### 認証ミドルウェア
 
 API Gateway では、すべての保護されたエンドポイントで認証ミドルウェアが動作します：
 
-- JWTトークンを検証
+- JWT トークンを検証（Authorization ヘッダーまたは Cookie から取得）
 - ユーザー情報（user_id, role）をコンテキストに設定
-- 認証失敗時は401 Unauthorizedを返す
+- 認証失敗時は 401 Unauthorized を返す
+- ブラウザクライアントと API クライアントの両方をサポート
 
 ## 🔄 イベント駆動フロー
 
@@ -271,6 +447,9 @@ API Gateway では、すべての保護されたエンドポイントで認証�
 ```bash
 # gRPC コード生成
 make proto
+
+# データベースコード生成（sqlc）
+make sqlc
 
 # 生成されたコードをクリーンアップ
 make clean
@@ -317,12 +496,20 @@ docker-compose down
 - [x] 認証ミドルウェアの実装（API Gateway）
 - [x] JWT トークン検証とユーザーコンテキスト管理
 - [x] ハンドラーとミドルウェアの分離（コード整理）
+- [x] JWT トークン生成の実装（Auth Service）
+- [x] パスワードハッシュ化（bcrypt）
+- [x] データベース統合（PostgreSQL + sqlc）
+- [x] ユーザー登録機能（POST /signup）
+- [x] ログアウト機能（POST /logout）
+- [x] Cookie ベースの認証（httpOnly cookies）
+- [x] CORS 対応（フロントエンド連携）
+- [x] パスワード強度バリデーション（8 文字以上、大文字・小文字・数字・記号）
+- [x] 機密情報の環境変数化
+- [x] データベースマイグレーション（users テーブル）
 
 ### 🚧 実装中
 
-- [ ] JWT トークン生成の実装（Auth Service）
-- [ ] パスワードハッシュ化
-- [ ] データベース統合（PostgreSQL/Supabase）
+（現在進行中の作業はありません）
 
 ### 📋 将来実装予定
 
