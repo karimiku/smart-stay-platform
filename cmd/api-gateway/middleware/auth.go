@@ -115,25 +115,28 @@ func (m *AuthMiddleware) RequireRole(allowedRoles ...string) func(http.HandlerFu
 	}
 }
 
-// extractBearerToken extracts Bearer token from Authorization header
+// extractBearerToken extracts Bearer token from Authorization header or Cookie
 // Security: Strictly validates token format
 func extractBearerToken(r *http.Request) string {
+	// First, try to get token from Authorization header (for API clients)
 	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return ""
-	}
-
+	if authHeader != "" {
 	const bearerPrefix = "Bearer "
-	if !strings.HasPrefix(authHeader, bearerPrefix) {
-		return ""
-	}
-
+		if strings.HasPrefix(authHeader, bearerPrefix) {
 	token := strings.TrimSpace(strings.TrimPrefix(authHeader, bearerPrefix))
-	if token == "" {
-		return ""
+			if token != "" {
+				return token
+			}
+		}
 	}
 
-	return token
+	// Fallback to Cookie (for browser clients)
+	cookie, err := r.Cookie("auth_token")
+	if err == nil && cookie != nil && cookie.Value != "" {
+		return cookie.Value
+	}
+
+		return ""
 }
 
 // respondUnauthorized returns 401 Unauthorized response
