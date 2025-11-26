@@ -55,7 +55,9 @@ func main() {
 	// =========================================================================
 	// 🛡️ Auth Routes (Public - No authentication required)
 	// =========================================================================
+	mux.HandleFunc("POST /signup", authHandler.Signup)
 	mux.HandleFunc("POST /login", authHandler.Login)
+	mux.HandleFunc("POST /logout", authHandler.Logout)
 
 	// =========================================================================
 	// 👤 User Routes (Protected - Authentication required)
@@ -72,10 +74,13 @@ func main() {
 	// =========================================================================
 	mux.HandleFunc("POST /keys/generate", authMiddleware.RequireAuth(keyHandler.GenerateKey))
 
-	// 6. Start Server
+	// 6. Apply CORS middleware
+	handler := middleware.CORS(mux)
+
+	// 7. Start Server
 	port := getEnv("PORT", "8080")
 	log.Printf("🌐 API Gateway listening on port %s", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
 }
