@@ -8,18 +8,19 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	// ⚠️ Replace [yourusername]
 	pb "github.com/karimiku/smart-stay-platform/pkg/genproto/reservation"
+	"github.com/karimiku/smart-stay-platform/internal/database"
 )
 
 const (
-	projectID = "smart-stay-local"
-	topicID   = "reservation-events" // イベントを流すトピック名
+	defaultTopicID = "reservation-events" // デフォルトのトピック名
 )
 
 func main() {
@@ -29,16 +30,54 @@ func main() {
 		port = "50052"
 	}
 
-	// 2. Initialize Pub/Sub Client
+	// 2. Connect to PostgreSQL database
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatalf("❌ DATABASE_URL environment variable is required. Please set it in .env file or environment.")
+	}
+	log.Println("✅ DATABASE_URL loaded from environment")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	dbPool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		log.Fatalf("❌ Failed to connect to database: %v", err)
+	}
+	defer dbPool.Close()
+
+	// Test database connection
+	if err := dbPool.Ping(ctx); err != nil {
+		log.Fatalf("❌ Failed to ping database: %v", err)
+	}
+	log.Println("✅ Database connection established")
+
+	// 3. Get Google Cloud Project ID from environment
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if projectID == "" {
+		projectID = os.Getenv("GCP_PROJECT")
+	}
+	if projectID == "" {
+		log.Fatalf("❌ GOOGLE_CLOUD_PROJECT or GCP_PROJECT environment variable is required")
+	}
+	log.Printf("✅ Using Google Cloud Project: %s", projectID)
+
+	// 4. Get Pub/Sub Topic ID from environment
+	topicID := os.Getenv("PUBSUB_TOPIC_ID")
+	if topicID == "" {
+		topicID = defaultTopicID
+	}
+	log.Printf("✅ Using Pub/Sub Topic: %s", topicID)
+
+	// 5. Initialize Pub/Sub Client
 	// PUBSUB_EMULATOR_HOST environment variable is automatically handled by the client library.
-	ctx := context.Background()
 	pubsubClient, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Failed to create Pub/Sub client: %v", err)
 	}
 	defer pubsubClient.Close()
 
-	// 3. Create Topic if not exists (Idempotent)
+	// 6. Create Topic if not exists (Idempotent)
 	topic := pubsubClient.Topic(topicID)
 	exists, err := topic.Exists(ctx)
 	if err != nil {
@@ -52,24 +91,26 @@ func main() {
 		}
 	}
 
-	// 4. Start TCP Listener
+	// 7. Start TCP Listener
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	// 5. Create gRPC Server & Register Service
+	// 8. Create gRPC Server & Register Service
 	grpcServer := grpc.NewServer()
 	
-	// Pass the topic to the service implementation
+	// Pass the topic and database queries to the service implementation
+	queries := database.New(dbPool)
 	svc := &server{
 		pubsubTopic: topic,
+		queries:     queries,
 	}
 	pb.RegisterReservationServiceServer(grpcServer, svc)
 
 	reflection.Register(grpcServer)
 
-	// 6. Start Server
+	// 9. Start Server
 	go func() {
 		log.Printf("📝 Reservation Service is running on port %s", port)
 		if err := grpcServer.Serve(lis); err != nil {
@@ -77,7 +118,7 @@ func main() {
 		}
 	}()
 
-	// 7. Graceful Shutdown
+	// 10. Graceful Shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
