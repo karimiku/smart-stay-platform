@@ -17,6 +17,9 @@ service KeyService {
   // Immediately revokes a digital key.
   // This is a synchronous operation used for security-critical actions like check-out.
   rpc RevokeKey(RevokeKeyRequest) returns (RevokeKeyResponse);
+
+  // Retrieves all keys for a specific user.
+  rpc ListKeys(ListKeysRequest) returns (ListKeysResponse);
 }
 
 // The request message for key generation.
@@ -40,4 +43,23 @@ message RevokeKeyRequest {
 // The response message for key revocation.
 message RevokeKeyResponse {
   bool success = 1;
+}
+
+// The request message for listing keys.
+message ListKeysRequest {
+  string user_id = 1; // UUID
+}
+
+// The response message containing the list of keys.
+message ListKeysResponse {
+  repeated Key keys = 1;
+}
+
+// Represents a digital key with its validity period.
+message Key {
+  string key_code = 1;
+  string device_id = 2;
+  string reservation_id = 3;
+  google.protobuf.Timestamp valid_from = 4;
+  google.protobuf.Timestamp valid_until = 5;
 }
