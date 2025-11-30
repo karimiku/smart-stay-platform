@@ -10,6 +10,7 @@ import (
 
 	pbKey "github.com/karimiku/smart-stay-platform/pkg/genproto/key"
 
+	"github.com/karimiku/smart-stay-platform/cmd/api-gateway/middleware"
 	"github.com/karimiku/smart-stay-platform/cmd/api-gateway/utils"
 )
 
@@ -65,6 +66,43 @@ func (h *KeyHandler) GenerateKey(w http.ResponseWriter, r *http.Request) {
 	utils.SuccessResponse(w, map[string]interface{}{
 		"key_code":  res.KeyCode,
 		"device_id": res.DeviceId,
+	})
+}
+
+// ListKeys handles listing all keys for the current user
+func (h *KeyHandler) ListKeys(w http.ResponseWriter, r *http.Request) {
+	// Get user_id from JWT
+	userID, ok := middleware.GetUserID(r)
+	if !ok {
+		utils.ErrorResponse(w, http.StatusUnauthorized, "User ID not found")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	res, err := h.keyClient.ListKeys(ctx, &pbKey.ListKeysRequest{
+		UserId: userID,
+	})
+	if err != nil {
+		utils.ErrorResponse(w, http.StatusInternalServerError, "Failed to list keys")
+		return
+	}
+
+	// Convert keys to JSON format
+	var keys []map[string]interface{}
+	for _, key := range res.Keys {
+		keys = append(keys, map[string]interface{}{
+			"key_code":       key.KeyCode,
+			"device_id":      key.DeviceId,
+			"reservation_id": key.ReservationId,
+			"valid_from":     key.ValidFrom.AsTime().Format(time.RFC3339),
+			"valid_until":    key.ValidUntil.AsTime().Format(time.RFC3339),
+		})
+	}
+
+	utils.SuccessResponse(w, map[string]interface{}{
+		"keys": keys,
 	})
 }
 
