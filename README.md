@@ -99,83 +99,6 @@ smart-stay-platform/
         └── reservation/
 ```
 
-## 環境構築 (Getting Started)
-
-### 前提条件
-
-- Go 1.23+
-- Docker & Docker Compose
-- Protocol Buffers Compiler (protoc)
-- gRPC Go プラグイン（protoc-gen-go, protoc-gen-go-grpc）
-
-### 🛠️ 初期セットアップ
-
-#### リポジトリのクローン
-
-```bash
-git clone https://github.com/yourusername/smart-stay-platform.git
-cd smart-stay-platform
-```
-
-#### 環境変数の設定
-
-機密情報は環境変数で管理します。`.env.example`をコピーして`.env`を作成し、実際の値を設定してください。
-
-```bash
-cp .env.example .env
-# .envファイルを編集して、実際の値を設定
-```
-
-**重要**: `.env`ファイルは絶対にコミットしないでください（`.gitignore`で除外済み）。
-
-**本番環境では、必ず環境変数を設定してください。デフォルト値は開発環境専用です。**
-
-#### コード生成
-
-**gRPC コードの生成**
-
-`proto/` フォルダの定義に基づき、Go コードを生成します。
-
-```bash
-make proto
-```
-
-→ これにより、`pkg/genproto` 配下に Go のインターフェースとデータ構造が生成されます。
-
-**データベースコードの生成**
-
-`sqlc`を使用して型安全な SQL クエリコードを生成します。
-
-```bash
-make sqlc
-```
-
-→ これにより、`internal/database` 配下にデータベースモデルとクエリ関数が生成されます。
-
-#### ローカル開発環境の起動
-
-Docker Compose を使用して、すべてのサービスを一度に起動します。
-
-```bash
-docker-compose up --build
-```
-
-これにより、以下のサービスが起動します：
-
-- **postgres** (ポート 5432): PostgreSQL データベース
-- **pubsub-emulator** (ポート 8085): Google Cloud Pub/Sub のローカルエミュレータ
-- **auth-service** (ポート 50051): 認証サービス
-- **reservation-service** (ポート 50052): 予約サービス
-- **key-service** (ポート 50053): 鍵サービス
-- **api-gateway** (ポート 8080): API ゲートウェイ（BFF）
-
-個別サービスの起動：
-
-```bash
-# 例: API Gateway と Auth Service のみ起動
-docker-compose up api-gateway auth-service pubsub-emulator
-```
-
 ## 📡 API エンドポイント
 
 ### API Gateway (BFF) - `http://localhost:8080`
@@ -321,47 +244,6 @@ docker-compose up api-gateway auth-service pubsub-emulator
       "device_id": "smart-lock-device-001"
     }
     ```
-
-## 🔧 環境変数
-
-### 必要な環境変数
-
-| 変数名                    | 説明                           | 必須                                              | サービス              |
-| ------------------------- | ------------------------------ | ------------------------------------------------- | --------------------- |
-| `POSTGRES_USER`           | PostgreSQL ユーザー名          | **必須** (ローカル開発のみ)                       | -                     |
-| `POSTGRES_PASSWORD`       | PostgreSQL パスワード          | **必須** (ローカル開発のみ)                       | -                     |
-| `POSTGRES_DB`             | PostgreSQL データベース名      | **必須** (ローカル開発のみ)                       | -                     |
-| `DATABASE_URL`            | データベース接続 URL           | **必須**                                          | 全サービス            |
-| `JWT_SECRET`              | JWT トークン署名用シークレット | **必須**                                          | auth-service          |
-| `CORS_ALLOWED_ORIGIN`     | CORS 許可オリジン              | オプション（デフォルト: `http://localhost:3000`） | api-gateway           |
-| `GOOGLE_CLOUD_PROJECT`    | Google Cloud プロジェクト ID   | **必須** (本番環境)                               | reservation-service, key-service |
-| `GCP_PROJECT`             | Google Cloud プロジェクト ID   | オプション（`GOOGLE_CLOUD_PROJECT`の代替）       | reservation-service, key-service |
-| `PUBSUB_TOPIC_ID`         | Pub/Sub トピック ID            | オプション（デフォルト: `reservation-events`）    | reservation-service, key-service |
-| `PUBSUB_SUBSCRIPTION_ID`  | Pub/Sub サブスクリプション ID   | オプション（デフォルト: `key-service-subscription`） | key-service |
-| `SMART_LOCK_DEVICE_ID`    | スマートロックデバイス ID      | オプション（デフォルト: `smart-lock-device-001`） | key-service |
-| `PORT`                    | サービスポート番号              | オプション（デフォルト: サービスごとに異なる）     | 全サービス            |
-
-### 環境変数の設定方法
-
-1. **開発環境（ローカル）**
-
-   ```bash
-   # .envファイルを作成（.env.exampleをコピー）
-   cp .env.example .env
-   # 必要に応じて値を変更
-   ```
-
-2. **本番環境**
-   - 環境変数を直接設定するか、シークレット管理サービスを使用
-   - **必ず強力なパスワードと JWT_SECRET を設定してください**
-   - JWT_SECRET の生成例: `openssl rand -base64 32`
-
-### セキュリティ注意事項
-
-- ⚠️ `.env`ファイルは絶対にコミットしないでください
-- ⚠️ デフォルト値は開発環境専用です
-- ⚠️ 本番環境では必ず環境変数を設定してください
-- ⚠️ JWT_SECRET は強力なランダム文字列を使用してください
 
 ## 🔐 認証
 
