@@ -19,6 +19,9 @@ service ReservationService {
   // Retrieves the details and current status of a reservation.
   // Clients poll this endpoint to check if a reservation has moved from PENDING to CONFIRMED.
   rpc GetReservation(GetReservationRequest) returns (GetReservationResponse);
+
+  // Retrieves all reservations for a specific user.
+  rpc ListReservations(ListReservationsRequest) returns (ListReservationsResponse);
 }
 
 // ReservationStatus represents the state of a reservation in the Saga workflow.
@@ -64,4 +67,12 @@ message GetReservationRequest {
 
 message GetReservationResponse {
   Reservation reservation = 1;
+}
+
+message ListReservationsRequest {
+  string user_id = 1; // UUID
+}
+
+message ListReservationsResponse {
+  repeated Reservation reservations = 1;
 }
