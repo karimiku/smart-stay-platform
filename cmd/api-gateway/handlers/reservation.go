@@ -84,3 +84,46 @@ func (h *ReservationHandler) CreateReservation(w http.ResponseWriter, r *http.Re
 	})
 }
 
+// ListReservations handles listing all reservations for the current user
+func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Request) {
+	// Get user_id from JWT
+	userID, ok := middleware.GetUserID(r)
+	if !ok {
+		utils.ErrorResponse(w, http.StatusUnauthorized, "User ID not found")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	log.Printf("[BFF] Listing Reservations for User %s", userID)
+
+	// Call gRPC
+	res, err := h.resClient.ListReservations(ctx, &pbRes.ListReservationsRequest{
+		UserId: userID,
+	})
+	if err != nil {
+		log.Printf("❌ List reservations failed: %v", err)
+		utils.ErrorResponse(w, http.StatusInternalServerError, "Failed to list reservations")
+		return
+	}
+
+	// Convert reservations to JSON format
+	var reservations []map[string]interface{}
+	for _, reservation := range res.Reservations {
+		reservations = append(reservations, map[string]interface{}{
+			"id":          reservation.Id,
+			"user_id":     reservation.UserId,
+			"room_id":     reservation.RoomId,
+			"start_date":  reservation.StartDate.AsTime().Format("2006-01-02"),
+			"end_date":    reservation.EndDate.AsTime().Format("2006-01-02"),
+			"total_price": reservation.TotalPrice,
+			"status":      reservation.Status.String(),
+		})
+	}
+
+	utils.SuccessResponse(w, map[string]interface{}{
+		"reservations": reservations,
+	})
+}
+

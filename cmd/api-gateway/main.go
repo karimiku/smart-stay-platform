@@ -3,9 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	pbAuth "github.com/karimiku/smart-stay-platform/pkg/genproto/auth"
@@ -68,11 +71,13 @@ func main() {
 	// 📝 Reservation Routes (Protected - Authentication required)
 	// =========================================================================
 	mux.HandleFunc("POST /reservations", authMiddleware.RequireAuth(reservationHandler.CreateReservation))
+	mux.HandleFunc("GET /reservations", authMiddleware.RequireAuth(reservationHandler.ListReservations))
 
 	// =========================================================================
 	// 🔑 Key Routes (Protected - Authentication required)
 	// =========================================================================
 	mux.HandleFunc("POST /keys/generate", authMiddleware.RequireAuth(keyHandler.GenerateKey))
+	mux.HandleFunc("GET /keys", authMiddleware.RequireAuth(keyHandler.ListKeys))
 
 	// 6. Apply CORS middleware
 	handler := middleware.CORS(mux)
@@ -96,9 +101,62 @@ func getEnv(key, fallback string) string {
 
 func mustConnectGrpc(name, addr string) *grpc.ClientConn {
 	log.Printf("🔌 Connecting to %s at %s...", name, addr)
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	
+	// Parse address to handle both localhost:port and https://hostname formats
+	grpcAddr, useTLS := parseGrpcAddress(addr)
+	
+	var creds credentials.TransportCredentials
+	if useTLS {
+		// Use TLS for Cloud Run (production)
+		creds = credentials.NewTLS(nil) // nil means use system's root CA certificates
+		log.Printf("🔒 Using TLS for %s", name)
+	} else {
+		// Use insecure for local development
+		creds = insecure.NewCredentials()
+		log.Printf("⚠️  Using insecure connection for %s (local development)", name)
+	}
+	
+	conn, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatalf("Failed to connect to %s: %v", name, err)
 	}
 	return conn
+}
+
+// parseGrpcAddress parses the address and returns the gRPC address and whether to use TLS
+// Handles:
+// - localhost:50051 -> localhost:50051, false
+// - https://auth-service-xxb5f653ia-an.a.run.app -> auth-service-xxb5f653ia-an.a.run.app:443, true
+func parseGrpcAddress(addr string) (string, bool) {
+	// If it's already in host:port format (no scheme), use as-is
+	if !strings.Contains(addr, "://") {
+		return addr, false
+	}
+	
+	// Parse URL
+	parsedURL, err := url.Parse(addr)
+	if err != nil {
+		log.Printf("⚠️  Failed to parse URL %s, using as-is: %v", addr, err)
+		return addr, false
+	}
+	
+	host := parsedURL.Hostname()
+	if host == "" {
+		host = parsedURL.Host
+	}
+	
+	// Extract port from URL or use default
+	port := parsedURL.Port()
+	if port == "" {
+		if parsedURL.Scheme == "https" {
+			port = "443" // Default HTTPS port
+		} else {
+			port = "80" // Default HTTP port
+		}
+	}
+	
+	grpcAddr := host + ":" + port
+	useTLS := parsedURL.Scheme == "https"
+	
+	return grpcAddr, useTLS
 }
