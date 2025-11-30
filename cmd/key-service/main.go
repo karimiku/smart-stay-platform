@@ -9,10 +9,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/karimiku/smart-stay-platform/internal/database"
 	"github.com/karimiku/smart-stay-platform/internal/events"
 	pb "github.com/karimiku/smart-stay-platform/pkg/genproto/key"
 	"google.golang.org/grpc"
@@ -20,9 +23,8 @@ import (
 )
 
 const (
-	projectID      = "smart-stay-local"
-	topicID        = "reservation-events"
-	subscriptionID = "key-service-subscription"
+	defaultTopicID        = "reservation-events"
+	defaultSubscriptionID = "key-service-subscription"
 )
 
 func main() {
@@ -32,15 +34,60 @@ func main() {
 		port = "50053"
 	}
 
-	// 2. Initialize Pub/Sub Client
-	ctx := context.Background()
+	// 2. Connect to PostgreSQL database
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatalf("❌ DATABASE_URL environment variable is required. Please set it in .env file or environment.")
+	}
+	log.Println("✅ DATABASE_URL loaded from environment")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	dbPool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		log.Fatalf("❌ Failed to connect to database: %v", err)
+	}
+	defer dbPool.Close()
+
+	// Test database connection
+	if err := dbPool.Ping(ctx); err != nil {
+		log.Fatalf("❌ Failed to ping database: %v", err)
+	}
+	log.Println("✅ Database connection established")
+
+	// 3. Get Google Cloud Project ID from environment
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if projectID == "" {
+		projectID = os.Getenv("GCP_PROJECT")
+	}
+	if projectID == "" {
+		log.Fatalf("❌ GOOGLE_CLOUD_PROJECT or GCP_PROJECT environment variable is required")
+	}
+	log.Printf("✅ Using Google Cloud Project: %s", projectID)
+
+	// 4. Get Pub/Sub Topic ID from environment
+	topicID := os.Getenv("PUBSUB_TOPIC_ID")
+	if topicID == "" {
+		topicID = defaultTopicID
+	}
+	log.Printf("✅ Using Pub/Sub Topic: %s", topicID)
+
+	// 5. Get Pub/Sub Subscription ID from environment
+	subscriptionID := os.Getenv("PUBSUB_SUBSCRIPTION_ID")
+	if subscriptionID == "" {
+		subscriptionID = defaultSubscriptionID
+	}
+	log.Printf("✅ Using Pub/Sub Subscription: %s", subscriptionID)
+
+	// 6. Initialize Pub/Sub Client
 	pubsubClient, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Failed to create Pub/Sub client: %v", err)
 	}
 	defer pubsubClient.Close()
 
-	// 3. Create/Get Subscription
+	// 7. Create/Get Subscription
 	topic := pubsubClient.Topic(topicID)
 	sub := pubsubClient.Subscription(subscriptionID)
 	
@@ -58,8 +105,11 @@ func main() {
 		}
 	}
 
-	// 4. Start Pub/Sub Listener (in background)
-	keySvc := &server{}
+	// 8. Start Pub/Sub Listener (in background)
+	queries := database.New(dbPool)
+	keySvc := &server{
+		queries: queries,
+	}
 	go func() {
 		log.Printf(" Started listening to Pub/Sub subscription: %s", subscriptionID)
 		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
@@ -78,7 +128,8 @@ func main() {
 				log.Printf("🔑 Processing ReservationCreated event for reservation: %s", event.ReservationID)
 				
 				// Generate key for the reservation
-				// Use reservation start/end dates (simplified: use current time + 24h)
+				// Use reservation start/end dates
+				// Note: UserID is retrieved from reservation in GenerateKey method
 				validFrom := event.StartDate
 				validUntil := event.EndDate
 				
@@ -104,7 +155,7 @@ func main() {
 		}
 	}()
 
-	// 5. Start gRPC Server
+	// 9. Start gRPC Server
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -121,7 +172,7 @@ func main() {
 		}
 	}()
 
-	// 6. Graceful Shutdown
+	// 10. Graceful Shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
