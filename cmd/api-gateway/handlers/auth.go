@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -59,7 +60,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	log.Printf("[BFF] Calling Login for: %s", reqBody.Email)
+	log.Printf("[BFF] Calling Login")
 	res, err := h.authClient.Login(ctx, &pbAuth.LoginRequest{
 		Email:    reqBody.Email,
 		Password: reqBody.Password,
@@ -71,12 +72,20 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set httpOnly Cookie for secure token storage
+	// For cross-origin requests (production), use SameSite=None with Secure=true
+	// For same-origin requests (development), use SameSite=Lax
+	isSecure := os.Getenv("ENVIRONMENT") == "production" || os.Getenv("HTTPS_ENABLED") == "true"
+	sameSite := http.SameSiteLaxMode
+	if isSecure {
+		// Cross-origin requests require SameSite=None with Secure=true
+		sameSite = http.SameSiteNoneMode
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "auth_token",
 		Value:    res.AccessToken,
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
-		SameSite: http.SameSiteLaxMode,
+		Secure:   isSecure,
+		SameSite: sameSite,
 		MaxAge:   int(res.ExpiresIn),
 		Path:     "/",
 	})
@@ -158,12 +167,20 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 // Logout handles user logout by clearing the auth cookie
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// Clear the auth cookie
+	// For cross-origin requests (production), use SameSite=None with Secure=true
+	// For same-origin requests (development), use SameSite=Lax
+	isSecure := os.Getenv("ENVIRONMENT") == "production" || os.Getenv("HTTPS_ENABLED") == "true"
+	sameSite := http.SameSiteLaxMode
+	if isSecure {
+		// Cross-origin requests require SameSite=None with Secure=true
+		sameSite = http.SameSiteNoneMode
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "auth_token",
 		Value:    "",
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
-		SameSite: http.SameSiteLaxMode,
+		Secure:   isSecure,
+		SameSite: sameSite,
 		MaxAge:   -1, // Delete the cookie
 		Path:     "/",
 	})
