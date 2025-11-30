@@ -73,10 +73,14 @@ services:
     environment:
       PORT: 50052
       PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      # DATABASE_URL MUST be set via .env file or environment
+      # Format: postgres://USER:PASSWORD@postgres:5432/DBNAME?sslmode=disable
+      DATABASE_URL: ${DATABASE_URL}
     ports:
       - "50052:50052"
     depends_on:
       - pubsub-emulator
+      - postgres
     networks:
       - smart-stay-network
     restart: unless-stopped
@@ -92,10 +96,14 @@ services:
     environment:
       PORT: 50053
       PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      # DATABASE_URL MUST be set via .env file or environment
+      # Format: postgres://USER:PASSWORD@postgres:5432/DBNAME?sslmode=disable
+      DATABASE_URL: ${DATABASE_URL}
     ports:
       - "50053:50053"
     depends_on:
       - pubsub-emulator
+      - postgres
     networks:
       - smart-stay-network
     restart: unless-stopped

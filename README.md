@@ -1,6 +1,6 @@
 # Smart Stay Platform
 
-Go、gRPC、Cloud Pub/Sub を用いた、スマートヴィラ予約プラットフォーム。マイクロサービスアーキテクチャ、BFF パターン、Cloud Run 上でのイベント駆動設計を採用しています。このプロジェクトは、会員制/契約ベースの宿泊体験を実現するために、認証、デジタル鍵生成、予約のライフサイクル管理に特化しています。
+Go、gRPC、Cloud Pub/Sub を用いた、スマートヴィラ予約プラットフォーム。マイクロサービスアーキテクチャ、BFF パターン、Cloud Run 上でのイベント駆動設計を採用しています。
 
 ## アーキテクチャ
 
@@ -326,14 +326,20 @@ docker-compose up api-gateway auth-service pubsub-emulator
 
 ### 必要な環境変数
 
-| 変数名                | 説明                           | 必須                                              |
-| --------------------- | ------------------------------ | ------------------------------------------------- |
-| `POSTGRES_USER`       | PostgreSQL ユーザー名          | **必須**                                          |
-| `POSTGRES_PASSWORD`   | PostgreSQL パスワード          | **必須**                                          |
-| `POSTGRES_DB`         | PostgreSQL データベース名      | **必須**                                          |
-| `DATABASE_URL`        | データベース接続 URL           | **必須**                                          |
-| `JWT_SECRET`          | JWT トークン署名用シークレット | **必須**                                          |
-| `CORS_ALLOWED_ORIGIN` | CORS 許可オリジン              | オプション（デフォルト: `http://localhost:3000`） |
+| 変数名                    | 説明                           | 必須                                              | サービス              |
+| ------------------------- | ------------------------------ | ------------------------------------------------- | --------------------- |
+| `POSTGRES_USER`           | PostgreSQL ユーザー名          | **必須** (ローカル開発のみ)                       | -                     |
+| `POSTGRES_PASSWORD`       | PostgreSQL パスワード          | **必須** (ローカル開発のみ)                       | -                     |
+| `POSTGRES_DB`             | PostgreSQL データベース名      | **必須** (ローカル開発のみ)                       | -                     |
+| `DATABASE_URL`            | データベース接続 URL           | **必須**                                          | 全サービス            |
+| `JWT_SECRET`              | JWT トークン署名用シークレット | **必須**                                          | auth-service          |
+| `CORS_ALLOWED_ORIGIN`     | CORS 許可オリジン              | オプション（デフォルト: `http://localhost:3000`） | api-gateway           |
+| `GOOGLE_CLOUD_PROJECT`    | Google Cloud プロジェクト ID   | **必須** (本番環境)                               | reservation-service, key-service |
+| `GCP_PROJECT`             | Google Cloud プロジェクト ID   | オプション（`GOOGLE_CLOUD_PROJECT`の代替）       | reservation-service, key-service |
+| `PUBSUB_TOPIC_ID`         | Pub/Sub トピック ID            | オプション（デフォルト: `reservation-events`）    | reservation-service, key-service |
+| `PUBSUB_SUBSCRIPTION_ID`  | Pub/Sub サブスクリプション ID   | オプション（デフォルト: `key-service-subscription`） | key-service |
+| `SMART_LOCK_DEVICE_ID`    | スマートロックデバイス ID      | オプション（デフォルト: `smart-lock-device-001`） | key-service |
+| `PORT`                    | サービスポート番号              | オプション（デフォルト: サービスごとに異なる）     | 全サービス            |
 
 ### 環境変数の設定方法
 
@@ -506,17 +512,21 @@ docker-compose down
 - [x] パスワード強度バリデーション（8 文字以上、大文字・小文字・数字・記号）
 - [x] 機密情報の環境変数化
 - [x] データベースマイグレーション（users テーブル）
+- [x] 予約一覧取得（GET /reservations）
+- [x] 鍵一覧取得（GET /keys）
+- [x] 予約作成フローの実装（フロントエンド連携）
+- [x] 鍵表示機能（予約開始日に基づく）
+- [x] データベースマイグレーション（reservations, keys テーブル）
+- [x] reservation-service と key-service の PostgreSQL 統合
 
 ### 実装中
 
-（現在進行中の作業はありません）
+- [ ] 決済処理の統合（現在は仮実装）
 
 ### 📋 将来実装予定
 
 - [ ] 予約ステータスの更新フロー（PENDING → CONFIRMED）
-- [ ] 予約一覧取得（GET /reservations）
 - [ ] 予約詳細取得（GET /reservations/:id）
-- [ ] 決済処理の統合
 - [ ] 外部スマートロック API との統合
 - [ ] エラーハンドリングとリトライロジック
 - [ ] 分散トレーシング（OpenTelemetry）
