@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"golang.org/x/crypto/bcrypt"
 	pb "github.com/karimiku/smart-stay-platform/pkg/genproto/auth"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/karimiku/smart-stay-platform/cmd/auth-service/jwt"
 	"github.com/karimiku/smart-stay-platform/internal/database"
