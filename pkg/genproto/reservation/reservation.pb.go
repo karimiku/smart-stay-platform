@@ -379,6 +379,94 @@ func (x *GetReservationResponse) GetReservation() *Reservation {
 	return nil
 }
 
+type ListReservationsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListReservationsRequest) Reset() {
+	*x = ListReservationsRequest{}
+	mi := &file_reservation_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListReservationsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListReservationsRequest) ProtoMessage() {}
+
+func (x *ListReservationsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_reservation_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListReservationsRequest.ProtoReflect.Descriptor instead.
+func (*ListReservationsRequest) Descriptor() ([]byte, []int) {
+	return file_reservation_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ListReservationsRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type ListReservationsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Reservations  []*Reservation         `protobuf:"bytes,1,rep,name=reservations,proto3" json:"reservations,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListReservationsResponse) Reset() {
+	*x = ListReservationsResponse{}
+	mi := &file_reservation_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListReservationsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListReservationsResponse) ProtoMessage() {}
+
+func (x *ListReservationsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_reservation_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListReservationsResponse.ProtoReflect.Descriptor instead.
+func (*ListReservationsResponse) Descriptor() ([]byte, []int) {
+	return file_reservation_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ListReservationsResponse) GetReservations() []*Reservation {
+	if x != nil {
+		return x.Reservations
+	}
+	return nil
+}
+
 var File_reservation_proto protoreflect.FileDescriptor
 
 const file_reservation_proto_rawDesc = "" +
@@ -406,15 +494,20 @@ const file_reservation_proto_rawDesc = "" +
 	"\x15GetReservationRequest\x12%\n" +
 	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\"T\n" +
 	"\x16GetReservationResponse\x12:\n" +
-	"\vreservation\x18\x01 \x01(\v2\x18.reservation.ReservationR\vreservation*M\n" +
+	"\vreservation\x18\x01 \x01(\v2\x18.reservation.ReservationR\vreservation\"2\n" +
+	"\x17ListReservationsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"X\n" +
+	"\x18ListReservationsResponse\x12<\n" +
+	"\freservations\x18\x01 \x03(\v2\x18.reservation.ReservationR\freservations*M\n" +
 	"\x11ReservationStatus\x12\v\n" +
 	"\aPENDING\x10\x00\x12\r\n" +
 	"\tCONFIRMED\x10\x01\x12\r\n" +
 	"\tCANCELLED\x10\x02\x12\r\n" +
-	"\tCOMPLETED\x10\x032\xd3\x01\n" +
+	"\tCOMPLETED\x10\x032\xb4\x02\n" +
 	"\x12ReservationService\x12b\n" +
 	"\x11CreateReservation\x12%.reservation.CreateReservationRequest\x1a&.reservation.CreateReservationResponse\x12Y\n" +
-	"\x0eGetReservation\x12\".reservation.GetReservationRequest\x1a#.reservation.GetReservationResponseBBZ@github.com/karimiku/smart-stay-platform/pkg/genproto/reservationb\x06proto3"
+	"\x0eGetReservation\x12\".reservation.GetReservationRequest\x1a#.reservation.GetReservationResponse\x12_\n" +
+	"\x10ListReservations\x12$.reservation.ListReservationsRequest\x1a%.reservation.ListReservationsResponseBBZ@github.com/karimiku/smart-stay-platform/pkg/genproto/reservationb\x06proto3"
 
 var (
 	file_reservation_proto_rawDescOnce sync.Once
@@ -429,7 +522,7 @@ func file_reservation_proto_rawDescGZIP() []byte {
 }
 
 var file_reservation_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_reservation_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_reservation_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_reservation_proto_goTypes = []any{
 	(ReservationStatus)(0),            // 0: reservation.ReservationStatus
 	(*Reservation)(nil),               // 1: reservation.Reservation
@@ -437,25 +530,30 @@ var file_reservation_proto_goTypes = []any{
 	(*CreateReservationResponse)(nil), // 3: reservation.CreateReservationResponse
 	(*GetReservationRequest)(nil),     // 4: reservation.GetReservationRequest
 	(*GetReservationResponse)(nil),    // 5: reservation.GetReservationResponse
-	(*timestamppb.Timestamp)(nil),     // 6: google.protobuf.Timestamp
+	(*ListReservationsRequest)(nil),   // 6: reservation.ListReservationsRequest
+	(*ListReservationsResponse)(nil),  // 7: reservation.ListReservationsResponse
+	(*timestamppb.Timestamp)(nil),     // 8: google.protobuf.Timestamp
 }
 var file_reservation_proto_depIdxs = []int32{
-	6, // 0: reservation.Reservation.start_date:type_name -> google.protobuf.Timestamp
-	6, // 1: reservation.Reservation.end_date:type_name -> google.protobuf.Timestamp
-	0, // 2: reservation.Reservation.status:type_name -> reservation.ReservationStatus
-	6, // 3: reservation.CreateReservationRequest.start_date:type_name -> google.protobuf.Timestamp
-	6, // 4: reservation.CreateReservationRequest.end_date:type_name -> google.protobuf.Timestamp
-	0, // 5: reservation.CreateReservationResponse.status:type_name -> reservation.ReservationStatus
-	1, // 6: reservation.GetReservationResponse.reservation:type_name -> reservation.Reservation
-	2, // 7: reservation.ReservationService.CreateReservation:input_type -> reservation.CreateReservationRequest
-	4, // 8: reservation.ReservationService.GetReservation:input_type -> reservation.GetReservationRequest
-	3, // 9: reservation.ReservationService.CreateReservation:output_type -> reservation.CreateReservationResponse
-	5, // 10: reservation.ReservationService.GetReservation:output_type -> reservation.GetReservationResponse
-	9, // [9:11] is the sub-list for method output_type
-	7, // [7:9] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	8,  // 0: reservation.Reservation.start_date:type_name -> google.protobuf.Timestamp
+	8,  // 1: reservation.Reservation.end_date:type_name -> google.protobuf.Timestamp
+	0,  // 2: reservation.Reservation.status:type_name -> reservation.ReservationStatus
+	8,  // 3: reservation.CreateReservationRequest.start_date:type_name -> google.protobuf.Timestamp
+	8,  // 4: reservation.CreateReservationRequest.end_date:type_name -> google.protobuf.Timestamp
+	0,  // 5: reservation.CreateReservationResponse.status:type_name -> reservation.ReservationStatus
+	1,  // 6: reservation.GetReservationResponse.reservation:type_name -> reservation.Reservation
+	1,  // 7: reservation.ListReservationsResponse.reservations:type_name -> reservation.Reservation
+	2,  // 8: reservation.ReservationService.CreateReservation:input_type -> reservation.CreateReservationRequest
+	4,  // 9: reservation.ReservationService.GetReservation:input_type -> reservation.GetReservationRequest
+	6,  // 10: reservation.ReservationService.ListReservations:input_type -> reservation.ListReservationsRequest
+	3,  // 11: reservation.ReservationService.CreateReservation:output_type -> reservation.CreateReservationResponse
+	5,  // 12: reservation.ReservationService.GetReservation:output_type -> reservation.GetReservationResponse
+	7,  // 13: reservation.ReservationService.ListReservations:output_type -> reservation.ListReservationsResponse
+	11, // [11:14] is the sub-list for method output_type
+	8,  // [8:11] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_reservation_proto_init() }
@@ -469,7 +567,7 @@ func file_reservation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_reservation_proto_rawDesc), len(file_reservation_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
