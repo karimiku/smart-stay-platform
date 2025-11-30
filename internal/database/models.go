@@ -8,6 +8,30 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Key struct {
+	ID            pgtype.UUID      `json:"id"`
+	ReservationID pgtype.UUID      `json:"reservation_id"`
+	UserID        pgtype.UUID      `json:"user_id"`
+	KeyCode       string           `json:"key_code"`
+	DeviceID      string           `json:"device_id"`
+	ValidFrom     pgtype.Timestamp `json:"valid_from"`
+	ValidUntil    pgtype.Timestamp `json:"valid_until"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+}
+
+type Reservation struct {
+	ID         pgtype.UUID      `json:"id"`
+	UserID     pgtype.UUID      `json:"user_id"`
+	RoomID     int64            `json:"room_id"`
+	StartDate  pgtype.Timestamp `json:"start_date"`
+	EndDate    pgtype.Timestamp `json:"end_date"`
+	TotalPrice int64            `json:"total_price"`
+	Status     string           `json:"status"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
+}
+
 type User struct {
 	ID             pgtype.UUID      `json:"id"`
 	Email          string           `json:"email"`

@@ -11,9 +11,17 @@ import (
 )
 
 type Querier interface {
+	CreateKey(ctx context.Context, arg CreateKeyParams) (Key, error)
+	CreateReservation(ctx context.Context, arg CreateReservationParams) (Reservation, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	GetKeyByReservationID(ctx context.Context, reservationID pgtype.UUID) (Key, error)
+	GetReservation(ctx context.Context, id pgtype.UUID) (Reservation, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
+	ListActiveKeysByUserID(ctx context.Context, userID pgtype.UUID) ([]Key, error)
+	ListKeysByUserID(ctx context.Context, userID pgtype.UUID) ([]Key, error)
+	ListReservationsByUserID(ctx context.Context, userID pgtype.UUID) ([]Reservation, error)
+	UpdateReservationStatus(ctx context.Context, arg UpdateReservationStatusParams) (Reservation, error)
 }
 
 var _ Querier = (*Queries)(nil)
