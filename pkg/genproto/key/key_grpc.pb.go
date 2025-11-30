@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	KeyService_GenerateKey_FullMethodName = "/key.KeyService/GenerateKey"
 	KeyService_RevokeKey_FullMethodName   = "/key.KeyService/RevokeKey"
+	KeyService_ListKeys_FullMethodName    = "/key.KeyService/ListKeys"
 )
 
 // KeyServiceClient is the client API for KeyService service.
@@ -36,6 +37,8 @@ type KeyServiceClient interface {
 	// Immediately revokes a digital key.
 	// This is a synchronous operation used for security-critical actions like check-out.
 	RevokeKey(ctx context.Context, in *RevokeKeyRequest, opts ...grpc.CallOption) (*RevokeKeyResponse, error)
+	// Retrieves all keys for a specific user.
+	ListKeys(ctx context.Context, in *ListKeysRequest, opts ...grpc.CallOption) (*ListKeysResponse, error)
 }
 
 type keyServiceClient struct {
@@ -66,6 +69,16 @@ func (c *keyServiceClient) RevokeKey(ctx context.Context, in *RevokeKeyRequest, 
 	return out, nil
 }
 
+func (c *keyServiceClient) ListKeys(ctx context.Context, in *ListKeysRequest, opts ...grpc.CallOption) (*ListKeysResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListKeysResponse)
+	err := c.cc.Invoke(ctx, KeyService_ListKeys_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeyServiceServer is the server API for KeyService service.
 // All implementations must embed UnimplementedKeyServiceServer
 // for forward compatibility.
@@ -79,6 +92,8 @@ type KeyServiceServer interface {
 	// Immediately revokes a digital key.
 	// This is a synchronous operation used for security-critical actions like check-out.
 	RevokeKey(context.Context, *RevokeKeyRequest) (*RevokeKeyResponse, error)
+	// Retrieves all keys for a specific user.
+	ListKeys(context.Context, *ListKeysRequest) (*ListKeysResponse, error)
 	mustEmbedUnimplementedKeyServiceServer()
 }
 
@@ -94,6 +109,9 @@ func (UnimplementedKeyServiceServer) GenerateKey(context.Context, *GenerateKeyRe
 }
 func (UnimplementedKeyServiceServer) RevokeKey(context.Context, *RevokeKeyRequest) (*RevokeKeyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RevokeKey not implemented")
+}
+func (UnimplementedKeyServiceServer) ListKeys(context.Context, *ListKeysRequest) (*ListKeysResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListKeys not implemented")
 }
 func (UnimplementedKeyServiceServer) mustEmbedUnimplementedKeyServiceServer() {}
 func (UnimplementedKeyServiceServer) testEmbeddedByValue()                    {}
@@ -152,6 +170,24 @@ func _KeyService_RevokeKey_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KeyService_ListKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListKeysRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyServiceServer).ListKeys(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyService_ListKeys_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyServiceServer).ListKeys(ctx, req.(*ListKeysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KeyService_ServiceDesc is the grpc.ServiceDesc for KeyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -166,6 +202,10 @@ var KeyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeKey",
 			Handler:    _KeyService_RevokeKey_Handler,
+		},
+		{
+			MethodName: "ListKeys",
+			Handler:    _KeyService_ListKeys_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

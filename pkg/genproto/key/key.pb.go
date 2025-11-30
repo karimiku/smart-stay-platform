@@ -226,6 +226,173 @@ func (x *RevokeKeyResponse) GetSuccess() bool {
 	return false
 }
 
+// The request message for listing keys.
+type ListKeysRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListKeysRequest) Reset() {
+	*x = ListKeysRequest{}
+	mi := &file_key_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListKeysRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListKeysRequest) ProtoMessage() {}
+
+func (x *ListKeysRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_key_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListKeysRequest.ProtoReflect.Descriptor instead.
+func (*ListKeysRequest) Descriptor() ([]byte, []int) {
+	return file_key_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ListKeysRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+// The response message containing the list of keys.
+type ListKeysResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Keys          []*Key                 `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListKeysResponse) Reset() {
+	*x = ListKeysResponse{}
+	mi := &file_key_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListKeysResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListKeysResponse) ProtoMessage() {}
+
+func (x *ListKeysResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_key_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListKeysResponse.ProtoReflect.Descriptor instead.
+func (*ListKeysResponse) Descriptor() ([]byte, []int) {
+	return file_key_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ListKeysResponse) GetKeys() []*Key {
+	if x != nil {
+		return x.Keys
+	}
+	return nil
+}
+
+// Represents a digital key with its validity period.
+type Key struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	KeyCode       string                 `protobuf:"bytes,1,opt,name=key_code,json=keyCode,proto3" json:"key_code,omitempty"`
+	DeviceId      string                 `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	ReservationId string                 `protobuf:"bytes,3,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
+	ValidFrom     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=valid_from,json=validFrom,proto3" json:"valid_from,omitempty"`
+	ValidUntil    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Key) Reset() {
+	*x = Key{}
+	mi := &file_key_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Key) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Key) ProtoMessage() {}
+
+func (x *Key) ProtoReflect() protoreflect.Message {
+	mi := &file_key_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Key.ProtoReflect.Descriptor instead.
+func (*Key) Descriptor() ([]byte, []int) {
+	return file_key_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Key) GetKeyCode() string {
+	if x != nil {
+		return x.KeyCode
+	}
+	return ""
+}
+
+func (x *Key) GetDeviceId() string {
+	if x != nil {
+		return x.DeviceId
+	}
+	return ""
+}
+
+func (x *Key) GetReservationId() string {
+	if x != nil {
+		return x.ReservationId
+	}
+	return ""
+}
+
+func (x *Key) GetValidFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ValidFrom
+	}
+	return nil
+}
+
+func (x *Key) GetValidUntil() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ValidUntil
+	}
+	return nil
+}
+
 var File_key_proto protoreflect.FileDescriptor
 
 const file_key_proto_rawDesc = "" +
@@ -243,11 +410,24 @@ const file_key_proto_rawDesc = "" +
 	"\x10RevokeKeyRequest\x12%\n" +
 	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\"-\n" +
 	"\x11RevokeKeyResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\x8a\x01\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"*\n" +
+	"\x0fListKeysRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"0\n" +
+	"\x10ListKeysResponse\x12\x1c\n" +
+	"\x04keys\x18\x01 \x03(\v2\b.key.KeyR\x04keys\"\xdc\x01\n" +
+	"\x03Key\x12\x19\n" +
+	"\bkey_code\x18\x01 \x01(\tR\akeyCode\x12\x1b\n" +
+	"\tdevice_id\x18\x02 \x01(\tR\bdeviceId\x12%\n" +
+	"\x0ereservation_id\x18\x03 \x01(\tR\rreservationId\x129\n" +
+	"\n" +
+	"valid_from\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tvalidFrom\x12;\n" +
+	"\vvalid_until\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"validUntil2\xc3\x01\n" +
 	"\n" +
 	"KeyService\x12@\n" +
 	"\vGenerateKey\x12\x17.key.GenerateKeyRequest\x1a\x18.key.GenerateKeyResponse\x12:\n" +
-	"\tRevokeKey\x12\x15.key.RevokeKeyRequest\x1a\x16.key.RevokeKeyResponseB:Z8github.com/karimiku/smart-stay-platform/pkg/genproto/keyb\x06proto3"
+	"\tRevokeKey\x12\x15.key.RevokeKeyRequest\x1a\x16.key.RevokeKeyResponse\x127\n" +
+	"\bListKeys\x12\x14.key.ListKeysRequest\x1a\x15.key.ListKeysResponseB:Z8github.com/karimiku/smart-stay-platform/pkg/genproto/keyb\x06proto3"
 
 var (
 	file_key_proto_rawDescOnce sync.Once
@@ -261,26 +441,34 @@ func file_key_proto_rawDescGZIP() []byte {
 	return file_key_proto_rawDescData
 }
 
-var file_key_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_key_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_key_proto_goTypes = []any{
 	(*GenerateKeyRequest)(nil),    // 0: key.GenerateKeyRequest
 	(*GenerateKeyResponse)(nil),   // 1: key.GenerateKeyResponse
 	(*RevokeKeyRequest)(nil),      // 2: key.RevokeKeyRequest
 	(*RevokeKeyResponse)(nil),     // 3: key.RevokeKeyResponse
-	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
+	(*ListKeysRequest)(nil),       // 4: key.ListKeysRequest
+	(*ListKeysResponse)(nil),      // 5: key.ListKeysResponse
+	(*Key)(nil),                   // 6: key.Key
+	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
 }
 var file_key_proto_depIdxs = []int32{
-	4, // 0: key.GenerateKeyRequest.valid_from:type_name -> google.protobuf.Timestamp
-	4, // 1: key.GenerateKeyRequest.valid_until:type_name -> google.protobuf.Timestamp
-	0, // 2: key.KeyService.GenerateKey:input_type -> key.GenerateKeyRequest
-	2, // 3: key.KeyService.RevokeKey:input_type -> key.RevokeKeyRequest
-	1, // 4: key.KeyService.GenerateKey:output_type -> key.GenerateKeyResponse
-	3, // 5: key.KeyService.RevokeKey:output_type -> key.RevokeKeyResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	7, // 0: key.GenerateKeyRequest.valid_from:type_name -> google.protobuf.Timestamp
+	7, // 1: key.GenerateKeyRequest.valid_until:type_name -> google.protobuf.Timestamp
+	6, // 2: key.ListKeysResponse.keys:type_name -> key.Key
+	7, // 3: key.Key.valid_from:type_name -> google.protobuf.Timestamp
+	7, // 4: key.Key.valid_until:type_name -> google.protobuf.Timestamp
+	0, // 5: key.KeyService.GenerateKey:input_type -> key.GenerateKeyRequest
+	2, // 6: key.KeyService.RevokeKey:input_type -> key.RevokeKeyRequest
+	4, // 7: key.KeyService.ListKeys:input_type -> key.ListKeysRequest
+	1, // 8: key.KeyService.GenerateKey:output_type -> key.GenerateKeyResponse
+	3, // 9: key.KeyService.RevokeKey:output_type -> key.RevokeKeyResponse
+	5, // 10: key.KeyService.ListKeys:output_type -> key.ListKeysResponse
+	8, // [8:11] is the sub-list for method output_type
+	5, // [5:8] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_key_proto_init() }
@@ -294,7 +482,7 @@ func file_key_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_key_proto_rawDesc), len(file_key_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
